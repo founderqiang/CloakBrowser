@@ -231,11 +231,30 @@ const page = await browser.newPage();
 
 | Platform | Chromium | Patches | Status |
 |---|---|---|---|
-| Linux x86_64 | 145 | 48 | ✅ Latest |
-| Linux arm64 (RPi, Graviton) | 145 | 48 | ✅ Latest |
-| macOS arm64 (Apple Silicon) | 145 | 26 | ✅ Latest |
-| macOS x86_64 (Intel) | 145 | 26 | ✅ Latest |
-| Windows x86_64 | 145 | 48 | ✅ Latest |
+| Linux x86_64 | 146 | 58 | ✅ Latest |
+| Linux arm64 (RPi, Graviton) | 146 | 58 | ✅ |
+| macOS arm64 (Apple Silicon) | 145 | 26 | ✅ |
+| macOS x86_64 (Intel) | 145 | 26 | ✅ |
+| Windows x86_64 | 146 | 58 | ✅ Latest |
+
+## CloakBrowser Pro
+
+The wrapper (Python + JS) is MIT, free forever. The binary uses a delayed
+free-release model:
+
+- **Free (v146)** — free forever on [GitHub Releases](https://github.com/CloakHQ/cloakbrowser/releases). Unlimited sessions. Works today, goes stale as detection evolves.
+- **Pro (latest, v148)** — the newest patches and Chromium upgrades first, so the [test results](#test-results) stay green as anti-bot systems change. Linux + Windows (macOS coming).
+
+Anti-bot detection updates constantly — an older binary degrades within weeks.
+Pro keeps you on the build that's actively maintained against it.
+
+Activate with your license key (env var, `licenseKey` option, or `~/.cloakbrowser/license.key`):
+
+```bash
+export CLOAKBROWSER_LICENSE_KEY=cb_xxxxxxxx
+```
+
+Pro plans → **[cloakbrowser.dev](https://cloakbrowser.dev)**
 
 ## Requirements
 
@@ -294,13 +313,13 @@ Other tips for maximizing reCAPTCHA scores:
 When auto-update downloads a newer binary, the previous version stays in `~/.cloakbrowser/`. Point `CLOAKBROWSER_BINARY_PATH` to the older cached binary:
 ```bash
 # Linux
-export CLOAKBROWSER_BINARY_PATH=~/.cloakbrowser/chromium-145.0.7632.159.2/chrome
+export CLOAKBROWSER_BINARY_PATH=~/.cloakbrowser/chromium-146.0.7680.177.4/chrome
 
 # macOS
 export CLOAKBROWSER_BINARY_PATH=~/.cloakbrowser/chromium-145.0.7632.109.2/Chromium.app/Contents/MacOS/Chromium
 
 # Windows
-set CLOAKBROWSER_BINARY_PATH=%USERPROFILE%\.cloakbrowser\chromium-145.0.7632.159.7\chrome.exe
+set CLOAKBROWSER_BINARY_PATH=%USERPROFILE%\.cloakbrowser\chromium-146.0.7680.177.4\chrome.exe
 ```
 
 ## Links

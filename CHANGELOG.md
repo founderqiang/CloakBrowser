@@ -6,11 +6,17 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ---
 
-## [Unreleased]
+## [0.4.0] — 2026-06-22
 
+- **[wrapper]** **CloakBrowser Pro**: all launch functions now accept a `license_key` parameter (`licenseKey` in JS); a key can also be supplied via the `CLOAKBROWSER_LICENSE_KEY` environment variable or a `~/.cloakbrowser/license.key` file. With a valid key the latest binary is downloaded from cloakbrowser.dev; without one, the free binary continues to download from GitHub Releases exactly as before. License validation is cached locally for 24h, and the Pro binary is authenticated with the same pinned Ed25519 signature as the free binary. A valid key whose Pro download or signature check fails surfaces a clear error rather than silently downgrading to the free binary. Adds `validate_license`/`LicenseInfo` exports and a `tier` field on `binary_info()`. Details: https://cloakbrowser.dev
 - **[wrapper]** **Security**: downloaded binaries are now verified against a pinned Ed25519 signature on the published `SHA256SUMS` (a detached `SHA256SUMS.sig`), so a compromised download mirror can no longer certify a tampered binary — the previous same-origin checksum proved integrity but not authenticity (#308). The signed manifest also binds the release version, rejecting a forced downgrade to an older signed build. Verification is mandatory on the official download path; silent auto-update is preserved for everyone because only a constant public key is pinned, not per-version hashes. Older installed wrappers are unaffected.
 - **[wrapper]** Headed launches no longer apply a fixed emulated viewport on top of the real browser window — the page now tracks the actual window so window-geometry stays self-consistent. Headless keeps a deterministic viewport (unchanged). Applies across `launch`, `launch_context`, `launch_persistent_context` (+ async) and the JS Playwright/Puppeteer wrappers. Passing an explicit `viewport=`/`no_viewport` (Python) or `viewport`/`defaultViewport` (JS) still works exactly as before.
 - **[wrapper]** **Breaking**: removed the optional `patchright` backend. The `backend` parameter and `CLOAKBROWSER_BACKEND` environment variable no longer exist, and the `cloakbrowser[patchright]` extra is gone. Stock Playwright is now the only backend. The stealth binary handles automation-signal suppression at the C++ level — patchright added no measurable benefit on top of it (identical reCAPTCHA v3 score to plain Playwright) while breaking proxy auth and `add_init_script` (#27). Callers passing `backend=...` will get a `TypeError`; remove the argument.
+- **[binary]** **CloakBrowser Pro — first Pro build**: Chromium `148.0.7778.215.2` for linux-x64, linux-arm64, and windows-x64 — 59 source-level fingerprint patches (up from 58 on 146). macOS builds to follow. Available to Pro subscribers at cloakbrowser.dev; v146 remains free on GitHub Releases.
+- **[binary]** Rebased the full patch set across two Chromium major versions — 146 → 147 → 148 — re-applying and adapting every patch to current Chromium internals
+- **[binary]** Cross-API fingerprint consistency improvements for Chromium 148 profiles
+- **[binary]** WebRTC fingerprint hardening — network signals matched to real Chrome
+- **[binary]** Font metric alignment for Windows profiles via the opt-in `--fingerprint-windows-font-metrics` flag — requires Windows fonts installed (see README "Font Setup on Linux")
 
 ## [0.3.32] — 2026-06-20
 

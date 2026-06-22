@@ -1,6 +1,6 @@
 # CloakBrowser Binary License
 
-**Version 1.0 — February 2026**
+**Version 1.1 — June 2026**
 
 Copyright (c) 2026 CloakHQ. All rights reserved.
 
@@ -14,7 +14,13 @@ The Binary is built on Chromium, which is open-source software by The Chromium A
 
 ## Grant of Use
 
-You are granted a non-exclusive, non-transferable, royalty-free license to use the Binary for personal or commercial purposes. No fees are required.
+You are granted a non-exclusive, non-transferable, royalty-free license to use the Binary for personal or commercial purposes, subject to the Version-Specific Terms below.
+
+## Version-Specific Terms
+
+Starting with Chromium 148, downloading the **latest major** Binary version requires an active CloakBrowser Pro subscription. Previous **major** versions (v146 and earlier) remain available at no cost under this license. Each time a new **major** Chromium version is released, the **prior major version** becomes available for free download. Minor and patch updates to the latest major version are part of the Pro subscription.
+
+Pro subscription details and pricing: https://cloakbrowser.dev
 
 ## Restrictions
 
