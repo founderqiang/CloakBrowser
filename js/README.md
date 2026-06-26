@@ -103,6 +103,9 @@ const browser = await launch({
   locale: 'en-US',
 });
 
+// Pin an exact Chromium version (Free or Pro)
+const browser = await launch({ browserVersion: '146.0.7680.177.5' });
+
 // Auto-detect timezone/locale from proxy IP (requires: npm install mmdb-lib)
 const browser = await launch({
   proxy: 'http://proxy:8080',
@@ -204,6 +207,7 @@ if (newVersion) console.log(`Updated to ${newVersion}`);
 | `CLOAKBROWSER_SKIP_CHECKSUM` | `false` | Set to `true` to skip SHA-256 verification after download |
 | `CLOAKBROWSER_WIDEVINE_CDM` | — | Path to a sideloaded `WidevineCdm` directory (overrides auto-detection next to the binary) |
 | `CLOAKBROWSER_WIDEVINE` | `1` | Set to `0` to disable automatic Widevine hint-file seeding for persistent contexts |
+| `CLOAKBROWSER_VERSION` | — | Pin to an exact Chromium version for rollback (e.g. `146.0.7680.177.5`). Works with Free and Pro binaries |
 
 ### Widevine / DRM
 
@@ -298,19 +302,36 @@ await new Promise(r => setTimeout(r, 3000));
 ```
 
 Other tips for maximizing reCAPTCHA scores:
+
 - **Use Playwright, not Puppeteer** — Puppeteer sends more CDP protocol traffic that reCAPTCHA detects ([details](#puppeteer))
 - **Use residential proxies** — datacenter IPs are flagged by IP reputation, not browser fingerprint
 - **Spend 15+ seconds on the page** before triggering reCAPTCHA — short visits score lower
 - **Space out requests** — back-to-back `grecaptcha.execute()` calls from the same session get penalized. Wait 30+ seconds between pages with reCAPTCHA
 - **Use a fixed fingerprint seed** (`--fingerprint=12345`) for consistent device identity across sessions
 - **Use `page.type()` instead of `page.fill()`** for form filling — `fill()` sets values directly without keyboard events, which reCAPTCHA's behavioral analysis flags. `type()` with a delay simulates real keystrokes:
+
   ```javascript
   await page.type('#email', 'user@example.com', { delay: 50 });
   ```
+
 - **Minimize `page.evaluate()` calls** before the reCAPTCHA check fires — each one sends CDP traffic
 
 **New update broke something? Roll back to the previous version**
-When auto-update downloads a newer binary, the previous version stays in `~/.cloakbrowser/`. Point `CLOAKBROWSER_BINARY_PATH` to the older cached binary:
+
+Pin to an exact binary version (keep current wrapper, use older Chromium):
+
+```bash
+export CLOAKBROWSER_VERSION=146.0.7680.177.5   # env var for all launches
+```
+
+```javascript
+const browser = await launch({ browserVersion: '146.0.7680.177.5' });
+```
+
+The pin is never sticky — unpinned launches always use the latest available version.
+
+Or point directly to a cached older binary on disk:
+
 ```bash
 # Linux
 export CLOAKBROWSER_BINARY_PATH=~/.cloakbrowser/chromium-146.0.7680.177.4/chrome
@@ -328,7 +349,7 @@ set CLOAKBROWSER_BINARY_PATH=%USERPROFILE%\.cloakbrowser\chromium-146.0.7680.177
 - 🐛 [Bug reports & feature requests](https://github.com/CloakHQ/CloakBrowser/issues)
 - 📦 [PyPI (Python package)](https://pypi.org/project/cloakbrowser/)
 - 📖 [Full documentation](https://github.com/CloakHQ/CloakBrowser#readme)
-- 📧 Contact: cloakhq@pm.me
+- 📧 Contact: <cloakhq@pm.me>
 
 ## License
 

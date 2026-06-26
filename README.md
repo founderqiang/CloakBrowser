@@ -663,6 +663,7 @@ Access the original un-patched Playwright page at `page._original` if you need r
 | `CLOAKBROWSER_WIDEVINE_CDM` | — | Path to a sideloaded `WidevineCdm` directory (overrides auto-detection next to the binary). See [Widevine / DRM](#widevine--drm) |
 | `CLOAKBROWSER_WIDEVINE` | `1` | Set to `0` to disable automatic Widevine hint-file seeding for persistent contexts |
 | `CLOAKBROWSER_FETCH_WIDEVINE` | `0` | Docker only: set to `1` to auto-fetch the Widevine CDM on container start (Linux x86-64 only). See [Widevine / DRM](#widevine--drm) |
+| `CLOAKBROWSER_VERSION` | — | Pin to an exact Chromium version for rollback (e.g. `148.0.7778.215.2`). Works with Free and Pro binaries |
 
 ## Fingerprint Management
 
@@ -1201,21 +1202,32 @@ npm install cloakbrowser@latest # JavaScript
 docker pull cloakhq/cloakbrowser:latest  # Docker
 ```
 
----
+### New update broke something? Roll back
 
-### Binary download fails / timeout
+Two ways to go back to a working version:
 
-Set a custom download URL or use a local binary:
+**Pin the binary** (keep current wrapper, just use an older Chromium) — works for Free and Pro:
 
-```bash
-export CLOAKBROWSER_BINARY_PATH=/path/to/your/chrome
+```python
+# Free — pin a public release
+browser = launch(browser_version="146.0.7680.177.5")
+
+# Pro — pin a previous Pro version
+browser = launch(license_key="cb_xxxxxxxx", browser_version="148.0.7778.215.2")
 ```
 
----
+```bash
+export CLOAKBROWSER_VERSION=146.0.7680.177.5   # env var for all launches
+```
 
-### New update broke something? Roll back to the previous version
+```javascript
+// Free — pin a public release
+const browser = await launch({ browserVersion: '146.0.7680.177.5' });
+```
 
-Install a specific wrapper version to downgrade both the wrapper and the binary it downloads:
+The pin is never sticky — unpinned launches always use the latest available version.
+
+**Or downgrade the wrapper** (each wrapper release hardcodes which binary version it downloads):
 
 ```bash
 pip install cloakbrowser==0.3.21              # Python
@@ -1223,9 +1235,13 @@ npm install cloakbrowser@0.3.21               # JavaScript
 docker pull cloakhq/cloakbrowser:0.3.21       # Docker
 ```
 
-Each wrapper version pins its own binary version, so downgrading the wrapper automatically gets you the matching binary on next launch.
-
 ---
+
+Set a custom download URL or use a local binary:
+
+```bash
+export CLOAKBROWSER_BINARY_PATH=/path/to/your/chrome
+```
 
 ### macOS: "App is damaged" or Gatekeeper blocks launch
 
