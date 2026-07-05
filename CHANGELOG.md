@@ -8,6 +8,12 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ## [Unreleased]
 
+## [0.4.8] — 2026-07-05
+
+- **[wrapper]** `geoip=True` now works **without a proxy** — on a direct connection it resolves the machine's own public IP for timezone, locale, and the WebRTC exit IP (previously it no-oped without a proxy, leaving UTC + `en-US` in bare Docker/cloud launches). Locale coverage expanded from 50 to **132 countries**. Python, JS, and .NET.
+- **[wrapper]** Headed and headless launches now open **maximized** on the newest Pro binaries (version-gated, same threshold as the headless no-viewport default), so the window fills the spoofed screen and window/screen geometry stays self-consistent. Suppressed when you set an explicit window size/position or viewport; older and free binaries are unchanged. Python, JS, and .NET.
+- **[docs]** Documented the Chromium 148+ pass-through and compatibility flags you can pass via `args`: `--fingerprint=off` (native pass-through debug mode), `--fingerprint-allow-3p-cookies` (third-party-cookie compatibility for reCAPTCHA v3 / SSO / payment challenges), and `--license-through-proxy` (route license/session calls through your proxy, Linux only).
+
 ## [0.4.7] — 2026-07-02
 
 - **[docker]** Update the public `cloaktest` suite to use free-tier-stable bot-detection checks while Pro continues to verify reCAPTCHA v3 at 0.9. The Docker smoke test now runs Sannysoft, Incolumitas, Rebrowser, deviceandbrowserinfo, BrowserScan, and CreepJS lies/noise=false; FingerprintJS and reCAPTCHA v3 are no longer hard-pass checks for the free v146 image.
