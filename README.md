@@ -196,13 +196,16 @@ Pro keeps you on the build that's actively maintained against it.
 Use Pro if CloakBrowser is part of production scraping, QA, monitoring, or
 automation where stale browser fingerprints cost you time or blocked runs.
 
+**New: try the latest Pro binary (Chromium 148) free for 7 days** — see how it
+performs against your targets. Cancel anytime.
+
 Activate with your license key (env var, `license_key=` param, or `~/.cloakbrowser/license.key`):
 
 ```bash
 export CLOAKBROWSER_LICENSE_KEY=cb_xxxxxxxx
 ```
 
-Pro plans → **[cloakbrowser.dev](https://cloakbrowser.dev)**
+Pro plans & free trial → **[cloakbrowser.dev](https://cloakbrowser.dev)**
 
 ## Test Results
 

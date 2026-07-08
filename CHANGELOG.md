@@ -8,6 +8,8 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ## [Unreleased]
 
+- **[wrapper]** Free-tier launch banner and `cloakbrowser info` upgrade hint now surface the **7-day free Pro trial** (Chromium 148). Python, JS, and .NET.
+
 ## [0.4.8] — 2026-07-05
 
 - **[binary]** Chromium **148.0.7778.215.5** (Pro, Windows + Linux; macOS follows) — the biggest fingerprint update yet. Pro license required; v146 stays free.

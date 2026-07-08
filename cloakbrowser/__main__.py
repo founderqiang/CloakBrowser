@@ -18,7 +18,7 @@ import platform
 import subprocess
 import sys
 
-UPGRADE_HINT = "→ Add a license key for the latest Pro binary: https://cloakbrowser.dev"
+UPGRADE_HINT = "→ Try the latest Pro binary (Chromium 148) free for 7 days: https://cloakbrowser.dev"
 
 
 def _setup_logging() -> None:
