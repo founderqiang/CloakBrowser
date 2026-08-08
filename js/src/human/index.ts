@@ -25,7 +25,7 @@
 import type { Browser, BrowserContext, Page, Frame, CDPSession } from 'playwright-core';
 import { type HumanConfig, type HumanActionOptions, mergeConfig, rand, randRange, sleep } from './config.js';
 import { type RawMouse, type RawKeyboard, humanMove, humanClick, clickTarget, humanIdle } from './mouse.js';
-import { humanType } from './keyboard.js';
+import { humanType, pressWithDelay } from './keyboard.js';
 import { scrollToElement } from './scroll.js';
 import { patchPageElementHandles, patchFrameElementHandles } from './elementhandle.js';
 import {
@@ -544,7 +544,7 @@ function patchPage(page: Page, cfg: HumanConfig, cursor: CursorState): void {
       await humanClickFn(selector, { _skipChecks: true, timeout: remainingMs(), force, human_config: options?.human_config } as any);
     }
     await sleep(rand(50, 150));
-    await originals.keyboardPress(key);
+    await pressWithDelay(originals.keyboardPress, key, options);
   };
 
   // --- pressSequentially ---
@@ -710,6 +710,30 @@ function patchSingleFrame(
   originals: any,
   stealth: StealthEval,
 ): void {
+  // The main frame's Locator actions (page.locator(sel).click() etc.) delegate,
+  // in Playwright, to the main frame's own method. Route those to the already-
+  // patched page-level methods so they use the full humanized path with the
+  // isolated-world pre-click reads. Only true sub-frames use the frame-scoped
+  // path below (iterFrames() includes the main frame). Mirrors the Python
+  // wrapper, which intercepts at Locator.click and routes to page.click.
+  if (frame === page.mainFrame()) {
+    const p = page as any;
+    (frame as any).click = (selector: string, options?: HumanActionOptions) => p.click(selector, options);
+    (frame as any).dblclick = (selector: string, options?: HumanActionOptions) => p.dblclick(selector, options);
+    (frame as any).hover = (selector: string, options?: HumanActionOptions) => p.hover(selector, options);
+    (frame as any).type = (selector: string, text: string, options?: HumanActionOptions) => p.type(selector, text, options);
+    (frame as any).fill = (selector: string, value: string, options?: HumanActionOptions) => p.fill(selector, value, options);
+    (frame as any).check = (selector: string, options?: HumanActionOptions) => p.check(selector, options);
+    (frame as any).uncheck = (selector: string, options?: HumanActionOptions) => p.uncheck(selector, options);
+    (frame as any).selectOption = (selector: string, values: any, options?: HumanActionOptions) => p.selectOption(selector, values, options);
+    (frame as any).press = (selector: string, key: string, options?: HumanActionOptions) => p.press(selector, key, options);
+    (frame as any).pressSequentially = (selector: string, text: string, options?: HumanActionOptions) => p.pressSequentially(selector, text, options);
+    (frame as any).tap = (selector: string, options?: HumanActionOptions) => p.tap(selector, options);
+    (frame as any).clear = (selector: string, options?: HumanActionOptions) => p.clear(selector, options);
+    // dragAndDrop has no humanized page equivalent; left on the native path (still detectable, out of scope).
+    return;
+  }
+
   // Save originals for methods that need fallback
   const origFrameClick = frame.click.bind(frame);
   const origFrameDblclick = frame.dblclick.bind(frame);
@@ -830,7 +854,7 @@ function patchSingleFrame(
       await frameClick(selector, options);
     }
     await sleep(rand(50, 150));
-    await originals.keyboardPress(key);
+    await pressWithDelay(originals.keyboardPress, key, options);
   };
 
   (frame as any).pressSequentially = async (selector: string, text: string, options?: HumanActionOptions) => {
@@ -893,12 +917,14 @@ function patchSingleFrame(
 
 
 function* iterFrames(page: Page): Generator<Frame> {
-  try {
-    const mainFrame = page.mainFrame();
-    yield mainFrame;
-    for (const child of mainFrame.childFrames()) {
-      yield child;
+  function* walk(frame: Frame): Generator<Frame> {
+    yield frame;
+    for (const child of frame.childFrames()) {
+      yield* walk(child);
     }
+  }
+  try {
+    yield* walk(page.mainFrame());
   } catch (error) {
     console.error('[cloakbrowser] Failed to enumerate page frames:', error);
   }

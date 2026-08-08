@@ -381,6 +381,60 @@ describe("patchPage press focus", () => {
   });
 });
 
+describe("press delay forwarding", () => {
+  it("page.press forwards delay to keyboard.press", async () => {
+    const { patchPage } = await import("../src/human/index.js");
+    const page = buildMockPage({ evaluate: async () => true });
+    const originalKeyboardPress = page.keyboard.press;
+
+    patchPage(
+      page,
+      resolveConfig("default", { idle_between_actions: false }),
+      { x: 50, y: 50, initialized: true },
+    );
+    await page.press("#field", "Control+V", { delay: 300 });
+
+    expect(originalKeyboardPress).toHaveBeenCalledWith("Control+V", { delay: 300 });
+  });
+
+  it("frame.press forwards delay to keyboard.press", async () => {
+    const { patchPage } = await import("../src/human/index.js");
+    const childFrame = buildMockFrame();
+    const mainFrame = { ...buildMockFrame(), childFrames: vi.fn(() => [childFrame]) };
+    const page = buildMockPage({ mainFrameReturn: mainFrame });
+    const originalKeyboardPress = page.keyboard.press;
+
+    patchPage(
+      page,
+      resolveConfig("default", { idle_between_actions: false }),
+      { x: 50, y: 50, initialized: true },
+    );
+    await childFrame.press("#field", "Control+V", { delay: 300 });
+
+    expect(originalKeyboardPress).toHaveBeenCalledWith("Control+V", { delay: 300 });
+  });
+
+  it("ElementHandle.press forwards delay to keyboard.press", async () => {
+    const { patchSingleElementHandle } = await import("../src/human/elementhandle.js");
+    const keyboardPress = vi.fn(async () => {});
+    const element = buildMockElementHandle();
+
+    patchSingleElementHandle(
+      element,
+      buildMockPage(),
+      resolveConfig("default", { idle_between_actions: false }),
+      { x: 50, y: 50, initialized: true },
+      { move: vi.fn(), down: vi.fn(), up: vi.fn(), wheel: vi.fn() },
+      { down: vi.fn(), up: vi.fn(), type: vi.fn(), insertText: vi.fn() },
+      { keyboardPress, keyboardDown: vi.fn(), keyboardUp: vi.fn() },
+      null,
+    );
+    await element.press("Control+V", { delay: 300 });
+
+    expect(keyboardPress).toHaveBeenCalledWith("Control+V", { delay: 300 });
+  });
+});
+
 // =========================================================================
 // patchPage behavioral: frame patching
 // =========================================================================
@@ -444,6 +498,28 @@ describe("patchPage frame patching", () => {
 
     expect(childFrame.locator).toHaveBeenCalledWith("button.submit");
     expect(originalPageClick).not.toHaveBeenCalled();
+  });
+
+  it("main-frame click delegates to the humanized page.click (not the frame path)", async () => {
+    // Regression guard: page.locator(sel).click() reaches the MAIN frame's click,
+    // which must route to the humanized page.click (isolated-world pre-click reads),
+    // NOT the frame-scoped locator path that reads via Playwright and is detectable.
+    const { patchPage } = await import("../src/human/index.js");
+
+    const mainFrame = { ...buildMockFrame(), childFrames: vi.fn(() => []) };
+    const page = buildMockPage({ mainFrameReturn: mainFrame });
+    const cfg = resolveConfig("default", { mouse_min_steps: 1, mouse_max_steps: 1 });
+    const cursor = { x: 0, y: 0, initialized: true };
+    patchPage(page as any, cfg, cursor as any);
+
+    // Swap the humanized page.click for a spy, then drive the main frame's click.
+    const clickSpy = vi.fn(async () => {});
+    (page as any).click = clickSpy;
+    await (mainFrame as any).click("button.submit", { timeout: 1234 });
+
+    expect(clickSpy).toHaveBeenCalledWith("button.submit", { timeout: 1234 });
+    // must NOT fall through to the frame-scoped locator (the pre-fix leak path)
+    expect(mainFrame.locator).not.toHaveBeenCalled();
   });
 
   it.each([
