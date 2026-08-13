@@ -8,6 +8,20 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ## [Unreleased]
 
+- **[binary]** Chromium **150.0.7871.114.6** (Pro Stable, Linux x64 + arm64 and Windows x64) — 71 source-level patches. Linux advances from `150.0.7871.114.4`; Windows advances from `150.0.7871.114.3`. macOS remains on Stable `150.0.7871.114.3`.
+  - **Identity and hardware:** expanded the Windows hardware-profile pool and tightened alignment between graphics, CPU, memory, and display characteristics. Fixed seeds may resolve to a different complete hardware identity than on the previous Stable build.
+  - **Windows fidelity:** completed text measurements and font availability across a broader real-world font set, refined platform-specific path handling, improved headed window geometry, and expanded locale coverage including Greek.
+  - **Browser consistency:** aligned identity across top-level and nested frames under automation overrides, normalized storage reporting across contexts, improved deterministic rendering behavior, stabilized native Linux profiles across seeds, and unified the reported browser build number.
+  - **Network identity:** improved consistency for IPv4, IPv6, dual-stack, direct, proxied, and automatically located sessions, including automatic proxy fallback for licensing connectivity.
+  - **Runtime and compatibility:** improved extension and worker reliability under cross-platform profiles, strengthened interrupted-session cleanup and local license diagnostics, and improved host-font isolation for cross-platform personas.
+
+---
+
+## [0.5.7] — 2026-08-11
+
+- **[wrapper]** Preserve the caller-specified `delay` for humanized key press actions instead of replacing it with an immediate key-up or an internally generated hold time. Covers page, frame, locator, element-handle, and keyboard press paths across Python, JavaScript Playwright/Puppeteer, and .NET.
+- **[wrapper]** Apply `humanize=True` recursively to frames nested more than one level deep instead of patching only the main frame and its direct children. Python and JavaScript Playwright.
+
 ---
 
 ## [0.5.6] — 2026-08-08
