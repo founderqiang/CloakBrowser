@@ -8,6 +8,7 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ## [Unreleased]
 
+- **[wrapper]** Fix `humanize=True` actions (`fill`, `click`, `type`) failing with an element-not-attached error after a navigation driven by a click or form submission instead of `goto`. The pre-action element checks could stay bound to the previous document and never recover; they now refresh on every navigation. Regression from 0.5.6. Python, JavaScript Playwright/Puppeteer, and .NET.
 - **[binary]** Chromium **150.0.7871.114.6** (Pro Stable, Linux x64 + arm64 and Windows x64) — 71 source-level patches. Linux advances from `150.0.7871.114.4`; Windows advances from `150.0.7871.114.3`. macOS remains on Stable `150.0.7871.114.3`.
   - **Identity and hardware:** expanded the Windows hardware-profile pool and tightened alignment between graphics, CPU, memory, and display characteristics. Fixed seeds may resolve to a different complete hardware identity than on the previous Stable build.
   - **Windows fidelity:** completed text measurements and font availability across a broader real-world font set, refined platform-specific path handling, improved headed window geometry, and expanded locale coverage including Greek.
