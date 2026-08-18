@@ -36,7 +36,7 @@ Drop-in Playwright/Puppeteer replacement for Python and JavaScript.<br>
 Same API, same code — just swap the import. <strong>3 lines of code, 30 seconds to unblock.</strong>
 </p>
 
-- **71 source-level C++ patches** — canvas, WebGL, audio, fonts, GPU, screen, WebRTC, network timing, automation signals, CDP input behavior
+- **73 source-level C++ patches** — canvas, WebGL, audio, fonts, GPU, screen, WebRTC, network timing, automation signals, CDP input behavior
 - **`humanize=True`** — human-like mouse curves, keyboard timing, and scroll patterns. One flag, behavioral detection passes
 - **Pro: 0.9 reCAPTCHA v3 score** — human-level, server-verified
 - **Passes Cloudflare Turnstile**, FingerprintJS, BrowserScan — tested against 30+ detection sites
@@ -150,12 +150,13 @@ page.goto("https://example.com")
 
 ---
 
-## Latest: v0.5.7 — 71 source-level stealth patches (Chromium 150.0.7871.114.6 — Linux + Windows)
+## Latest: v0.5.8 — 73 source-level stealth patches (Chromium 151.0.7922.108.2 — Linux + Windows)
 
-- **CloakBrowser Pro Stable** — Chromium `150.0.7871.114.6` on Linux x64, Linux ARM64, and Windows x64; macOS remains on `150.0.7871.114.3`. Set a `license_key` (`licenseKey` in JS) or the `CLOAKBROWSER_LICENSE_KEY` env var and the wrapper fetches the latest Stable build for your platform automatically. See [CloakBrowser Pro](#cloakbrowser-pro)
-- **CloakBrowser Pro Preview** — Chromium `151.0.7922.108.2` on Linux x64, Linux ARM64, and Windows x64. Opt in with `release_channel="preview"` or `CLOAKBROWSER_RELEASE_CHANNEL=preview`; macOS safely falls back to Stable.
+- **CloakBrowser Pro Stable** — Chromium `151.0.7922.108.2` on Linux x64, Linux ARM64, and Windows x64; macOS remains on `150.0.7871.114.3`. Set a `license_key` (`licenseKey` in JS) or the `CLOAKBROWSER_LICENSE_KEY` env var and the wrapper fetches the latest Stable build for your platform automatically. See [CloakBrowser Pro](#cloakbrowser-pro)
+- **CloakBrowser Pro Preview** — Chromium `151.0.7922.108.3` on Linux x64, Linux ARM64, Windows x64, and macOS. Opt in with `release_channel="preview"` or `CLOAKBROWSER_RELEASE_CHANNEL=preview`.
 - **.NET 8 / C# client** — CloakBrowser now ships as a NuGet package (`CloakBrowser`), mirroring the Python and JS wrappers.
-- **71 fingerprint patches** — rendering consistency improvements across Linux and Windows, corrected GPU/display/graphics parameters to match stock Chrome profiles
+- **Chromium 151 upgrade** — rebased the full patch set onto Chromium 151 (Linux + Windows), re-validated against reference data; macOS remains on the Chromium 150 Stable line
+- **73 fingerprint patches** — rendering consistency improvements across Linux and Windows, corrected GPU/display/graphics parameters to match stock Chrome profiles
 - **Windows native GPU passthrough** — real hardware values pass through directly instead of being spoofed, matching real browser behavior
 - **HTTP proxy inline credentials** — new network-layer support for proxies with inline authentication
 - **`extension_paths`** — load Chrome extensions in all launch functions
@@ -187,7 +188,7 @@ CloakBrowser doesn't solve CAPTCHAs — it prevents them from appearing. No CAPT
 
 Anti-bot systems change every week and an older binary quietly degrades. The latest build is the one that keeps passing. **Try it free, then upgrade when you're running for real.**
 
-- **Free, latest build (Chromium 150)** — the newest binary, the exact one that stays [green against live detection](#test-results). Free with a GitHub sign-in, one concurrent session. [Grab your key](https://cloakbrowser.dev/free) or run `cloakbrowser login`, then throw it at your hardest target.
+- **Free, latest build (Chromium 151)** — the newest binary, the exact one that stays [green against live detection](#test-results). Free with a GitHub sign-in, one concurrent session. [Grab your key](https://cloakbrowser.dev/free) or run `cloakbrowser login`, then throw it at your hardest target.
 - **Pro** — when it's part of production scraping, QA, monitoring, or automation: scale to **5, 20, 200, 2,000, or more concurrent sessions**, always first on the newest patches, with hands-on support. Linux, Windows, macOS. **[See plans and pricing →](https://cloakbrowser.dev)**
 - **v146** — the older build stays free on [GitHub Releases](https://github.com/CloakHQ/cloakbrowser/releases). A quick first look, but it ages fast as detection evolves.
 
@@ -201,7 +202,7 @@ Try the latest free → **[cloakbrowser.dev/free](https://cloakbrowser.dev/free)
 
 ## Test Results
 
-All tests verified against live detection services. Results below are for the latest Pro/current build unless noted. Last tested: Jul 2026 (Chromium 150).
+All tests verified against live detection services. Results below are for the latest Pro/current build unless noted. Last tested: Aug 2026 (Chromium 151).
 
 | Detection Service | Stock Playwright | CloakBrowser | Notes |
 |---|---|---|---|
@@ -216,7 +217,7 @@ All tests verified against live detection services. Results below are for the la
 | `navigator.webdriver` | `true` | **`false`** | Source-level patch |
 | `navigator.plugins.length` | 0 | **5** | Real plugin list |
 | `window.chrome` | `undefined` | **`object`** | Present like real Chrome |
-| UA string | `HeadlessChrome` | **`Chrome/146.0.0.0`** | No headless leak |
+| UA string | `HeadlessChrome` | **`Chrome/151.0.0.0`** | No headless leak |
 | CDP detection | Detected | **Not detected** | `isAutomatedWithCDP: false` |
 | TLS fingerprint | Mismatch | **Identical to Chrome** | ja3n/ja4/akamai match |
 | | | **Tested against 30+ detection sites** | |
@@ -270,7 +271,7 @@ CloakBrowser is a thin wrapper (Python + JavaScript) around a custom-built Chrom
 3. **Every launch** → Playwright or Puppeteer starts with our binary + stealth args
 4. **You write code** → standard Playwright/Puppeteer API, nothing new to learn
 
-The binary includes 71 source-level patches covering canvas, WebGL, audio, fonts, GPU, screen properties, WebRTC, network timing, hardware reporting, automation signal removal, and CDP input behavior mimicking.
+The binary includes 73 source-level patches covering canvas, WebGL, audio, fonts, GPU, screen properties, WebRTC, network timing, hardware reporting, automation signal removal, and CDP input behavior mimicking.
 
 These are compiled into the Chromium binary — not injected via JavaScript, not set via flags.
 
@@ -846,11 +847,11 @@ browser = await launch_async(args=["--remote-debugging-port=9242"])
 
 | Platform | Free | Pro | Status |
 |---|---|---|---|
-| Linux x86_64 | Chromium 146 (58 patches) | Chromium 150 (71 patches) | ✅ |
-| Linux arm64 (RPi, Graviton) | Chromium 146 (58 patches) | Chromium 150 (71 patches) | ✅ |
+| Linux x86_64 | Chromium 146 (58 patches) | Chromium 151 (73 patches) | ✅ |
+| Linux arm64 (RPi, Graviton) | Chromium 146 (58 patches) | Chromium 151 (73 patches) | ✅ |
 | macOS arm64 (Apple Silicon) | Chromium 145 (26 patches) | Chromium 150 (71 patches) | ✅ |
 | macOS x86_64 (Intel) | Chromium 145 (26 patches) | Chromium 150 (71 patches) | ✅ |
-| Windows x86_64 | Chromium 146 (58 patches) | Chromium 150 (71 patches) | ✅ |
+| Windows x86_64 | Chromium 146 (58 patches) | Chromium 151 (73 patches) | ✅ |
 
 The wrapper auto-downloads the correct binary for your platform.
 
