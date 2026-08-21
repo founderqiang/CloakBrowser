@@ -914,7 +914,13 @@ browser = pw.chromium.connect_over_cdp("http://localhost:9222")
 page = browser.new_page()
 page.goto("https://example.com")
 print(page.title())
-browser.close()
+browser.close()  # Disconnects from CDP; cloakserve keeps Chrome running
+```
+
+With `connect_over_cdp()`, Playwright does not own the remote Chrome process. `browser.close()` only disconnects the client, so Chrome keeps running and continues holding its Pro session seat. To terminate it immediately, connect with a named `fingerprint` seed and call the close endpoint:
+
+```bash
+curl -X POST http://localhost:9222/fingerprint/11111/close
 ```
 
 If your framework needs a direct WebSocket endpoint, fetch Chrome's discovery document and use the rewritten `webSocketDebuggerUrl`. The URL points back through `cloakserve` so the CDP proxy can keep per-seed routing intact:
@@ -1004,7 +1010,7 @@ b4 = pw.chromium.connect_over_cdp(
 
 Supported query params: `fingerprint`, `timezone`, `locale`, `platform`, `platform-version`, `brand`, `brand-version`, `gpu-vendor`, `gpu-renderer`, `hardware-concurrency`, `device-memory`, `screen-width`, `screen-height`, `proxy`, `geoip`. Same seed reuses the same process (first connection's params win). No seed = shared default process (backward compatible).
 
-By default, per-seed processes stay alive until `cloakserve` exits. If clients create many unique seeds, set `--idle-timeout=SECONDS` or `CLOAKSERVE_IDLE_TIMEOUT=SECONDS` to automatically terminate a seed's Chrome process after its last CDP WebSocket disconnects. `0`, `off`, `false`, `none`, or `disabled` disable idle cleanup. When cleanup runs, the seed's temporary profile directory under `--data-dir` is removed too. Check active processes at `GET /` (returns JSON with PIDs, ports, connection counts, idle timeout, and pending cleanup status).
+By default, per-seed processes stay alive until `cloakserve` exits; idle cleanup is disabled (`0`). If clients create many unique seeds, set `--idle-timeout=SECONDS` or `CLOAKSERVE_IDLE_TIMEOUT=SECONDS` to automatically terminate a seed's Chrome process after its last CDP WebSocket disconnects. `0`, `off`, `false`, `none`, or `disabled` disable idle cleanup. When cleanup runs, the seed's temporary profile directory under `--data-dir` is removed too. Check active processes at `GET /` (returns JSON with PIDs, ports, connection counts, idle timeout, and pending cleanup status).
 
 **Persistent profiles** — mount a volume to keep cookies and sessions across container restarts:
 
