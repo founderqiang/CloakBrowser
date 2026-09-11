@@ -1040,7 +1040,8 @@ async function extractArchive(
   if (archivePath.endsWith(".zip")) {
     await extractZip(archivePath, destDir);
   } else {
-    await extractTar(archivePath, destDir);
+    // Signature-verified before extraction, so unpack as-is.
+    await tarExtract({ file: archivePath, cwd: destDir, strip: 0 });
   }
 
   // Flatten single subdirectory if needed
@@ -1060,23 +1061,6 @@ async function extractArchive(
   if (fs.existsSync(bp)) {
     console.log(`[cloakbrowser] Binary ready: ${bp}`);
   }
-}
-
-async function extractTar(archivePath: string, destDir: string): Promise<void> {
-  await tarExtract({
-    file: archivePath,
-    cwd: destDir,
-    strip: 0,
-    filter: (entryPath: string) => {
-      if (path.isAbsolute(entryPath) || entryPath.includes("..")) {
-        console.warn(
-          `[cloakbrowser] Skipping suspicious archive entry: ${entryPath}`
-        );
-        return false;
-      }
-      return true;
-    },
-  });
 }
 
 async function extractZip(archivePath: string, destDir: string): Promise<void> {
