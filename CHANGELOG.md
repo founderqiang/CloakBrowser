@@ -6,6 +6,15 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ---
 
+## [0.5.11] — 2026-09-24
+
+- **[wrapper]** The first-launch Pro banner now names the current Pro major (v152) instead of v151. Python, JavaScript, and .NET.
+- **[wrapper]** `cloakbrowser info` now reports macOS persona font completeness (a `Mac fonts:` line with the count found) next to the existing Windows font check, with a hint when the set is incomplete. Python, JavaScript, and .NET.
+- **[wrapper]** Downloaded binary archives are unpacked directly once their signature and checksum verify, dropping a redundant per-entry pass. Python, JavaScript, and .NET.
+- **[wrapper]** .NET: fix a `NullReferenceException` under `humanize` when a humanized locator (e.g. from `GetByText`) is passed to `AddLocatorHandlerAsync`, `RemoveLocatorHandlerAsync`, `Locator.Filter` (`Has`/`HasNot`), or `ScreenshotAsync` (`Mask`) (#549). Adds a public `Humanize.Unwrap(ILocator)` helper.
+
+---
+
 ## [0.5.10] — 2026-08-30
 
 - **[wrapper]** The first-launch welcome banner no longer aborts a launch on a legacy Windows console. On a non-UTF-8 (cp1252) console its arrow and dash characters raised `UnicodeEncodeError` on the binary-download path, which blocked license apply and profile launch (notably in CloakBrowser Manager). The banner is now ASCII and every write is guarded, so a cosmetic message can never stop a launch. Python, JavaScript, and .NET.
