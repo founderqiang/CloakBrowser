@@ -1479,6 +1479,7 @@ Issues and PRs welcome. If something isn't working, [open an issue](https://gith
 - [@Kumario1](https://github.com/Kumario1) — cloakserve idle cleanup for seeded profiles
 - [@0xlally](https://github.com/0xlally) — security reports (cloakserve path traversal, WebSocket origin bypass)
 - [@ishiko732](https://github.com/ishiko732) — HTTP proxy credentials in GeoIP resolution
+- [@Shub3am](https://github.com/Shub3am) — horizontal scroll-into-view for humanized clicks
 
 ## Star History
 
