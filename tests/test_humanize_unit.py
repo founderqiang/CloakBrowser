@@ -887,6 +887,13 @@ class TestMistypeConfig:
         careful = resolve_config("careful")
         assert careful.mistype_chance >= default.mistype_chance
 
+    def test_digit_neighbors_are_digits(self):
+        # #573: a letter typo is rejected by <input type=number>, so the
+        # correcting Backspace would delete the previous real digit.
+        from cloakbrowser.human.keyboard import NEARBY_KEYS
+        for d in "0123456789":
+            assert NEARBY_KEYS[d].isdigit(), (d, NEARBY_KEYS[d])
+
 
 # =========================================================================
 # 10. Select-all platform detection
