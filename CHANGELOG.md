@@ -11,6 +11,7 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 - **[wrapper]** The first-launch Pro banner now names the current Pro major (v154) instead of v152. Python, JavaScript, and .NET.
 - **[binary]** CloakBrowser Pro Stable is now Chromium `154.0.8037.57.1` on every platform: Linux x64/ARM64, Windows x64, and macOS (Apple Silicon and Intel). macOS moves up from Chromium 151.
 - **[binary]** Linux preview channel (x64/ARM64) is now `154.0.8037.57.2`: much lower CPU in headed mode on GPU-less Linux, safer proxy handling, a more patient license connection with a new `--license-route=auto|direct|proxy` flag, and the Windows persona's system and code fonts now match real Windows by default.
+- **[wrapper]** `cloakserve`: a browser launched through `/json/version` or `/json/list` with no WebSocket client attaching now gets idle cleanup, instead of running forever when `--idle-timeout` is set (thanks [@dstosch](https://github.com/dstosch), #558)
 
 ---
 
