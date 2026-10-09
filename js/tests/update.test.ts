@@ -770,12 +770,28 @@ describe("concurrent first-run download", () => {
     "replaces a partial install left by an interrupted extraction",
     async () => {
       vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(archiveBytes));
-      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
       fs.mkdirSync(path.join(getBinaryDir(), "lib"), { recursive: true });
       fs.writeFileSync(path.join(getBinaryDir(), "lib", "part-0.bin"), "truncated");
 
       expect(await ensureBinary()).toBe(getBinaryPath());
       expect(inspectInstall()).toBe("complete");
+    },
+  );
+
+  // MCP stdio servers use stdout as their JSON-RPC channel; status lines there break them.
+  it.skipIf(process.platform === "win32")(
+    "first-run download writes nothing to stdout",
+    async () => {
+      vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(archiveBytes));
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
+      const stdoutWrite = vi.spyOn(process.stdout, "write");
+
+      expect(await ensureBinary()).toBe(getBinaryPath());
+      expect(inspectInstall()).toBe("complete");
+      expect(consoleLog).not.toHaveBeenCalled();
+      expect(stdoutWrite).not.toHaveBeenCalled();
     },
   );
 

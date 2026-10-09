@@ -93,7 +93,7 @@ export async function ensureBinary(
         `CLOAKBROWSER_BINARY_PATH set to '${localOverride}' but file does not exist`
       );
     }
-    console.log(`[cloakbrowser] Using local binary override: ${localOverride}`);
+    console.error(`[cloakbrowser] Using local binary override: ${localOverride}`);
     return localOverride;
   }
 
@@ -159,7 +159,7 @@ export async function ensureBinary(
       return binaryPath;
     }
 
-    console.log(
+    console.error(
       `[cloakbrowser] Stealth Chromium ${requestedVersion} not found. Downloading for ${getPlatformTag()}...`
     );
     await downloadAndExtract(requestedVersion);
@@ -196,7 +196,7 @@ export async function ensureBinary(
   }
 
   // Download platform's hardcoded version
-  console.log(
+  console.error(
     `[cloakbrowser] Stealth Chromium ${platformVersion} not found. Downloading for ${getPlatformTag()}...`
   );
   await downloadAndExtract();
@@ -219,7 +219,7 @@ export function clearCache(): void {
   const cacheDir = getCacheDir();
   if (fs.existsSync(cacheDir)) {
     fs.rmSync(cacheDir, { recursive: true, force: true });
-    console.log(`[cloakbrowser] Cache cleared: ${cacheDir}`);
+    console.error(`[cloakbrowser] Cache cleared: ${cacheDir}`);
   }
 }
 
@@ -270,7 +270,7 @@ export async function checkForUpdate(): Promise<string | null> {
     return latest;
   }
 
-  console.log(`[cloakbrowser] Downloading Chromium ${latest}...`);
+  console.error(`[cloakbrowser] Downloading Chromium ${latest}...`);
   await downloadAndExtract(latest);
   writeVersionMarker(latest);
   return latest;
@@ -296,7 +296,7 @@ export async function checkForProUpdate(
   }
 
   if (!proBinaryReady(latest)) {
-    console.log(`[cloakbrowser] Downloading Pro Chromium ${latest}...`);
+    console.error(`[cloakbrowser] Downloading Pro Chromium ${latest}...`);
     await downloadProBinary(latest, licenseKey);
     if (!fs.existsSync(getBinaryPath(latest, true))) {
       throw new Error(
@@ -611,7 +611,7 @@ export function verifySignature(manifestBytes: Uint8Array, sigB64Bytes: Uint8Arr
     }
     try {
       if (cryptoVerify(null, manifestBytes, keyObject, signature)) {
-        console.log("[cloakbrowser] SHA256SUMS signature verified: Ed25519 OK");
+        console.error("[cloakbrowser] SHA256SUMS signature verified: Ed25519 OK");
         return;
       }
     } catch {
@@ -684,11 +684,11 @@ async function verifyChecksum(filePath: string, expectedHash: string): Promise<v
       `Please retry or report at https://github.com/CloakHQ/cloakbrowser/issues`
     );
   }
-  console.log("[cloakbrowser] Checksum verified: SHA-256 OK");
+  console.error("[cloakbrowser] Checksum verified: SHA-256 OK");
 }
 
 async function downloadFile(url: string, dest: string, headers?: Record<string, string>): Promise<void> {
-  console.log(`[cloakbrowser] Downloading from ${url}`);
+  console.error(`[cloakbrowser] Downloading from ${url}`);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
@@ -731,7 +731,7 @@ async function downloadFile(url: string, dest: string, headers?: Record<string, 
           lastLoggedPct = pct;
           const dlMB = Math.floor(downloaded / (1024 * 1024));
           const totalMB = Math.floor(total / (1024 * 1024));
-          console.log(
+          console.error(
             `[cloakbrowser] Download progress: ${pct}% (${dlMB}/${totalMB} MB)`
           );
         }
@@ -746,7 +746,7 @@ async function downloadFile(url: string, dest: string, headers?: Record<string, 
     });
 
     const sizeMB = Math.floor(fs.statSync(dest).size / (1024 * 1024));
-    console.log(`[cloakbrowser] Download complete: ${sizeMB} MB`);
+    console.error(`[cloakbrowser] Download complete: ${sizeMB} MB`);
   } catch (err) {
     // Ensure file stream is destroyed on error to release the handle
     if (!fileStream.destroyed) {
@@ -808,7 +808,7 @@ async function ensureProBinary(
       showWelcome(welcomeTier);
       return getBinaryPath(requestedVersion, true);
     }
-    console.log(
+    console.error(
       `[cloakbrowser] Downloading Pro Chromium ${requestedVersion} for ${getPlatformTag()}...`
     );
     await downloadProBinary(requestedVersion, licenseKey);
@@ -884,7 +884,7 @@ async function ensureProBinary(
   // `version` (the server latest) needs downloading. On failure, fall back to a
   // cached Pro build if we have one — never the free binary.
   try {
-    console.log(
+    console.error(
       `[cloakbrowser] Downloading Pro Chromium ${version} for ${getPlatformTag()}...`
     );
     await downloadProBinary(version, licenseKey);
@@ -893,7 +893,7 @@ async function ensureProBinary(
     // cached-Pro fallback, which is only for transient download failures.
     if (err instanceof BinaryVerificationError) throw err;
     if (proBinaryReady(effective)) {
-      console.log(
+      console.error(
         `[cloakbrowser] Pro update to ${version} failed; launching cached Pro binary ${effective}`
       );
       showWelcome(welcomeTier);
@@ -1036,7 +1036,7 @@ async function extractArchive(
   destDir: string,
   binaryPath?: string
 ): Promise<void> {
-  console.log(`[cloakbrowser] Extracting to ${destDir}`);
+  console.error(`[cloakbrowser] Extracting to ${destDir}`);
   const bp = binaryPath || getBinaryPath();
 
   // Extract into a private sibling dir, then rename it into place. Concurrent
@@ -1100,7 +1100,7 @@ async function extractArchive(
   }
 
   if (fs.existsSync(bp)) {
-    console.log(`[cloakbrowser] Binary ready: ${bp}`);
+    console.error(`[cloakbrowser] Binary ready: ${bp}`);
   }
 }
 
@@ -1299,12 +1299,12 @@ async function checkAndDownloadUpdate(): Promise<void> {
       return;
     }
 
-    console.log(
+    console.error(
       `[cloakbrowser] Newer Chromium available: ${latest} (current: ${platformVersion}). Downloading in background...`
     );
     await downloadAndExtract(latest);
     writeVersionMarker(latest);
-    console.log(
+    console.error(
       `[cloakbrowser] Background update complete: Chromium ${latest} ready. Will use on next launch.`
     );
   } catch (err) {

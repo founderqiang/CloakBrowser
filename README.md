@@ -150,7 +150,7 @@ page.goto("https://example.com")
 
 ---
 
-## Latest: v0.5.12 — 87 source-level stealth patches (Chromium 154.0.8037.57.1)
+## Latest: v0.6.0 — 87 source-level stealth patches (Chromium 154.0.8037.57.1)
 
 - **CloakBrowser Pro Stable** — Chromium `154.0.8037.57.1` on Linux x64, Linux ARM64, Windows x64, and macOS (Apple Silicon and Intel). Set a `license_key` (`licenseKey` in JS) or the `CLOAKBROWSER_LICENSE_KEY` env var and the wrapper fetches the latest Stable build for your platform automatically. See [CloakBrowser Pro](#cloakbrowser-pro)
 - **.NET 8 / C# client** — CloakBrowser now ships as a NuGet package (`CloakBrowser`), mirroring the Python and JS wrappers.
@@ -416,6 +416,8 @@ asyncio.run(main())
 ### `launch_persistent_context()`
 
 Same as `launch_context()`, but with a persistent user profile. Cookies, localStorage, and cache persist across sessions.
+
+A persistent profile keeps its fingerprint seed across launches (stored in `.cloakbrowser-seed` inside the profile; an explicit `--fingerprint=` in `args` overrides it, and a corrupt file is replaced with a warning). To rotate the identity, delete `.cloakbrowser-seed` and the next launch picks a new seed.
 
 Use this when you need to:
 
@@ -1418,6 +1420,7 @@ A: Possibly. Bot detection is an arms race. Source-level patches are harder to d
 
 **Q: Can I use my own proxy?**
 A: Yes. Pass `proxy="http://user:pass@host:port"` or `proxy="socks5://user:pass@host:port"` to `launch()`. Both HTTP and SOCKS5 proxies are supported natively.
+SOCKS5 and credentialed HTTP proxies are set on the browser, so Playwright's own request client (`context.request`, `page.request`, `route.fetch()`) does not use them and sends from your real IP. Make those calls from the page instead, e.g. `page.evaluate("url => fetch(url).then(r => r.text())", url)`, which goes through the proxy like any browser request.
 
 ## Links
 
@@ -1462,7 +1465,7 @@ Issues and PRs welcome. If something isn't working, [open an issue](https://gith
 
 ## Contributors
 
-- [@evelaa123](https://github.com/evelaa123) — humanize behavior, persistent contexts, Windows fix, .NET client
+- [@evelaa123](https://github.com/evelaa123) — humanize behavior and its unified engine, persistent contexts, Windows fix, .NET client
 - [@yahooguntu](https://github.com/yahooguntu) — persistent contexts
 - [@kitiho](https://github.com/kitiho) — null viewport fix
 - [@eofreternal](https://github.com/eofreternal) — humanConfig type fix, humanized method option types, iframe pointer-events fix
@@ -1479,7 +1482,7 @@ Issues and PRs welcome. If something isn't working, [open an issue](https://gith
 - [@Kumario1](https://github.com/Kumario1) — cloakserve idle cleanup for seeded profiles
 - [@0xlally](https://github.com/0xlally) — security reports (cloakserve path traversal, WebSocket origin bypass)
 - [@ishiko732](https://github.com/ishiko732) — HTTP proxy credentials in GeoIP resolution
-- [@Shub3am](https://github.com/Shub3am) — horizontal scroll-into-view for humanized clicks
+- [@Shub3am](https://github.com/Shub3am) — horizontal scroll-into-view for humanized clicks, safe concurrent first-run downloads
 - [@dstosch](https://github.com/dstosch) — cloakserve idle cleanup for browsers launched over HTTP
 
 ## Star History
