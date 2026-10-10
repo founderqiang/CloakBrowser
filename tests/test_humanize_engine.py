@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import http.server
 import socketserver
+import sys
 import threading
 import time
 from typing import Any
@@ -595,6 +596,103 @@ def test_check_uncheck_and_select(page):
     page.query_selector("#chk").set_checked(True)
     assert page.is_checked("#chk")
     assert page.select_option("#sel", index=1) == ["b"]
+
+
+COUNTRIES = ["Afghanistan", "Albania", "Chad", "Chile", "China", "Dominica", "Dominican Republic",
+             "Guinea", "Guinea-Bissau", "Niger", "Nigeria", "\u00c5land Islands", "Aaland", "United Arab Emirates",
+             "United Kingdom", "United States", "United States Minor Outlying Islands", "Zimbabwe"]
+
+
+def _blink_typeahead(labels, enabled, start, typed):
+    """Blink's TypeAhead::HandleEvent (kMatchPrefix | kCycleFirstChar) for one search."""
+    import unicodedata
+
+    def fold(t):
+        return "".join(c for c in unicodedata.normalize("NFD", t) if not unicodedata.combining(c)).lower()
+    keys = [fold(l.lstrip()) if ok else "" for l, ok in zip(labels, enabled)]
+    buf = rep = ""
+    sel = start
+    for ch in fold(typed):
+        buf += ch
+        if ch == rep:
+            prefix, off = ch, 1
+        else:
+            prefix = buf
+            off = 0 if len(buf) > 1 else 1
+            rep = "" if len(buf) > 1 else ch
+        i = (max(sel, 0) + off) % len(keys)
+        for _ in keys:
+            if keys[i] and keys[i].startswith(prefix):
+                sel = i
+                break
+            i = (i + 1) % len(keys)
+    return sel
+
+
+def test_type_ahead_plan_lands_on_the_option_from_any_highlighted_row(page):
+    """The plan must not depend on which row the open popup highlights (#580): it
+    can sit under the OS pointer, and the page cannot read it."""
+    page.evaluate("""(labels) => { const s = document.createElement('select'); s.id = 'ta';
+        for (const l of labels) s.add(new Option(l));
+        s.options[1].disabled = true; document.body.append(s); }""", COUNTRIES)
+    enabled = [i != 1 for i in range(len(COUNTRIES))]
+    human = page._impl_obj._cloak_human
+    frame = page.main_frame._impl_obj
+
+    async def plans():
+        from cloakbrowser.human.engine import Target, _Deadline
+        r = await human.resolve(Target(frame, "#ta"), _Deadline(5000))
+        return [await human.worlds.call(frame, "typeAheadPlan", r.id, t, 3) for t in range(len(COUNTRIES))]
+    for target, plan in enumerate(page._sync(plans())):
+        if target == 1:
+            assert plan is None  # disabled: not reachable
+            continue
+        assert plan and not plan.get("home"), (COUNTRIES[target], plan)
+        for start in range(len(COUNTRIES)):
+            row = _blink_typeahead(COUNTRIES, enabled, start, plan["typed"])
+            step = 1 if plan["arrows"] > 0 else -1
+            for _ in range(abs(plan["arrows"])):
+                row += step
+                while not enabled[row]:
+                    row += step
+            assert row == target, (COUNTRIES[target], plan, COUNTRIES[start])
+    got = {COUNTRIES[t]: p for t, p in enumerate(page._sync(plans()))}
+    assert got["Chile"] == {"typed": "chil", "arrows": 0}  # its own name, not "cha" + 1 arrow
+    assert got["\u00c5land Islands"]["typed"] == "al"  # the browser folds accents: plain "al" finds it
+    assert got["Aaland"]["typed"] == "aal"  # "aa" would cycle through the a's instead
+    assert all(abs(p["arrows"]) <= 3 for p in got.values() if p)
+
+
+def test_select_option_on_a_long_dropdown_types_ahead(page):
+    """#581: no walk over every row, and the timeout bounds it."""
+    page.evaluate("""() => { const s = document.createElement('select'); s.id = 'long';
+        for (let i = 0; i < 205; i++) s.add(new Option('Country ' + String(i).padStart(3, '0'), 'v' + i));
+        window.__sel = []; for (const t of ['input', 'change']) s.addEventListener(t, () => __sel.push(t));
+        document.body.append(s); }""")
+    reset(page)
+    assert page.select_option("#long", "v150") == ["v150"]
+    keys = [e["key"] for e in events(page, "keydown")]
+    assert "ArrowDown" not in keys and len(keys) <= 13, keys
+    sel = page.evaluate("__sel")
+    # A macOS dropdown moves on every typed letter (one input/change each); elsewhere only Enter commits.
+    assert sel[-2:] == ["input", "change"] and (sys.platform == "darwin" or len(sel) == 2), sel
+    page.evaluate("document.querySelector('#long').selectedIndex = 0")
+    with pytest.raises(TimeoutError):
+        page.select_option("#long", "v200", timeout=200)
+
+
+def test_select_option_on_emoji_labels(page):
+    """Blink's type-ahead drops a typed emoji, so these options are reached with
+    arrows; a macOS popup ignores arrows, so there it refuses."""
+    page.evaluate("""() => { const s = document.createElement('select'); s.id = 'emoji';
+        for (const [l, v] of [['Pick one', ''], ['\U0001F34E Apple', 'a'], ['\U0001F34C Banana', 'b'],
+                              ['\U0001F352 Cherry', 'c']]) s.add(new Option(l, v));
+        document.body.append(s); }""")
+    if sys.platform == "darwin":
+        with pytest.raises(Error, match="cannot be picked with human input"):
+            page.select_option("#emoji", "c")
+    else:
+        assert page.select_option("#emoji", "c") == ["c"]
 
 
 # --- frames and handles ------------------------------------------------------
