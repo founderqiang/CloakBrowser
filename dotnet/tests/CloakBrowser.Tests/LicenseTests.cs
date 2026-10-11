@@ -743,7 +743,7 @@ public class LicenseTests : IDisposable
     {
         var marker = Path.Combine(_tmp, $"latest_pro_version_{Config.GetPlatformTag()}");
         File.WriteAllText(marker, "148.0.7778.215.2");
-        // Ticket 431 Fix 4: marker present but no Pro binary on disk -> null, NOT the
+        // Marker present but no Pro binary on disk -> null, NOT the
         // free base. A valid Pro license must never fall back to the free binary.
         Assert.Null(Config.GetEffectiveVersion(pro: true));
     }
@@ -926,7 +926,7 @@ public class LicenseTests : IDisposable
     [Fact]
     public void CheckForProUpdate_already_latest_returns_null()
     {
-        // Ticket 431 Fix 1: `update` on a Pro install already at latest is a no-op.
+        // `update` on a Pro install already at latest is a no-op.
         File.WriteAllText(
             Path.Combine(_tmp, $"latest_pro_version_{Config.GetPlatformTag()}"),
             "148.0.7778.215.5");
@@ -1056,7 +1056,7 @@ public class LicenseTests : IDisposable
     [InlineData(76, "session limit")]
     [InlineData(77, "invalid, expired, or missing")]
     [InlineData(78, "couldn't verify")]
-    [InlineData(79, "not writable")]
+    [InlineData(79, "--license-route")]
     public void LicenseErrorMessage_MapsKnownCodes(int code, string fragment)
     {
         var msg = License.LicenseErrorMessage(LaunchText(code));
@@ -1139,7 +1139,7 @@ public class LicenseTests : IDisposable
     [InlineData(76, "session limit")]
     [InlineData(77, "invalid, expired, or missing")]
     [InlineData(78, "couldn't verify")]
-    [InlineData(79, "not writable")]
+    [InlineData(79, "--license-route")]
     public void LicenseErrorForCode_MapsKnownCodes(int code, string fragment)
     {
         var err = License.LicenseErrorForCode(code);
