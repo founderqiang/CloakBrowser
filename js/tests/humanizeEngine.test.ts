@@ -470,6 +470,18 @@ describe.skipIf(!process.env.CLOAKBROWSER_BINARY_PATH)('humanize engine (real br
     }
   });
 
+  it('selectOption that navigates the page still returns (#597)', async () => {
+    const p = await open();
+    await p.evaluate(() => {
+      const f = document.createElement('form'); f.method = 'get';
+      const s = document.createElement('select'); s.id = 'nav'; s.name = 'city';
+      for (const [l, v] of [['Amsterdam', 'a'], ['Berlin', 'b']]) s.add(new Option(l, v));
+      s.onchange = () => f.submit(); f.append(s); document.body.prepend(f);
+    });
+    expect(await p.selectOption('#nav', 'b')).toEqual(['b']);
+    await p.waitForURL('**city=b');
+  });
+
   // --- frames and handles ---------------------------------------------------
 
   it('frame actions', async () => {

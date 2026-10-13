@@ -8,6 +8,9 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ## [Unreleased]
 
+- **[wrapper]** Async launches no longer freeze the caller's event loop. `launch_async()`, `launch_context_async()` and `launch_persistent_context_async()` ran the binary/license check and the GeoIP and WebRTC exit-IP lookups directly on the event loop, so every other coroutine (a server's health endpoint, WebSockets, other browsers) stalled for up to 20s per launch behind a slow proxy. They now run in a worker thread. .NET: the license check and Pro version lookup inside async launches no longer hold the caller's thread (e.g. a UI thread). Python and .NET; JavaScript was not affected.
+- **[wrapper]** Fix humanized `select_option()` raising `element is not attached to the DOM` when the pick navigates the page (e.g. a dropdown that submits its form on change). The option was selected and the page navigated, but the check after the pick ran on the new page. It now returns the chosen values, as Playwright does. A pick that lands on the wrong option without navigating still raises. Python, JavaScript Playwright, and .NET (thanks [@msamoylov](https://github.com/msamoylov), #597)
+
 ## [0.6.2] — 2026-10-12
 
 - **[wrapper]** Humanized actions (`click`, `hover`, `fill`, `type`, `check` and the rest) work again on Playwright 1.64. They timed out with `element is not visible` even on visible elements, because Playwright 1.64 changed how it checks visibility. Older Playwright versions are unaffected. Python, JavaScript, and .NET (thanks [@laplace-anon](https://github.com/laplace-anon), #586, #587)

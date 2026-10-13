@@ -274,7 +274,17 @@ internal sealed partial class HumanEngine
             await SelectDropdownAsync(t, r, targets.Count > 0 ? targets[0] : null, plan, o, api, d).ConfigureAwait(false);
         else
             await SelectListboxAsync(t, r, targets, o, api, cfg, d).ConfigureAwait(false);
-        var state = (await World.CallAsync(r.Frame, "selectState", r.Id).ConfigureAwait(false))!.Value;
+        JsonElement state;
+        try
+        {
+            state = (await World.CallAsync(r.Frame, "selectState", r.Id).ConfigureAwait(false))!.Value;
+        }
+        catch (StaleElementException)
+        {
+            // The pick navigated the page (a form submitted on change): nothing
+            // left to read back, so report what was chosen, as Playwright does.
+            return values;
+        }
         var selected = state.GetProperty("selected").EnumerateArray().Select(x => x.GetInt32()).OrderBy(x => x).ToList();
         var got = state.GetProperty("values").EnumerateArray().Select(x => x.GetString()!).ToList();
         if (!selected.SequenceEqual(targets.OrderBy(x => x)))

@@ -13,7 +13,7 @@ Drop-in Playwright/Puppeteer replacement. Same API, same code — just swap the 
 
 - **87 source-level C++ patches** — canvas, WebGL, audio, fonts, GPU, screen, WebRTC, network timing, automation signals
 - **0.9 reCAPTCHA v3 score** — human-level, server-verified
-- **Passes Cloudflare Turnstile**, FingerprintJS, BrowserScan — tested against 30+ detection sites
+- **Passes Cloudflare Turnstile**, FingerprintJS, BrowserScan — tested against 50+ detection sites
 - **`npm install cloakbrowser`** — binary auto-downloads, auto-updates, zero config
 - **Free and open source** — no subscriptions, no usage limits
 - **Works with any framework** — tested with browser-use, Crawl4AI, Scrapling, Stagehand ([example](examples/stagehand.ts)), LangChain, Selenium, and more
@@ -107,8 +107,8 @@ const browser = await launch({
   locale: 'en-US',
 });
 
-// Pin an exact Chromium version (Free or Pro)
-const browser = await launch({ browserVersion: '146.0.7680.177.5' });
+// Pin an exact Chromium version (paid Pro key only)
+const browser = await launch({ licenseKey: 'cb_xxxxxxxx', browserVersion: '154.0.8037.57.1' });
 
 // Opt into the Pro Preview binary channel
 const browser = await launch({
@@ -208,7 +208,7 @@ if (newVersion) console.log(`Updated to ${newVersion}`);
 | `navigator.webdriver` | `true` | **`false`** |
 | CDP detection | Detected | **Not detected** |
 | TLS fingerprint | Mismatch | **Identical to Chrome** |
-| | | **Tested against 30+ detection sites** |
+| | | **Tested against 50+ detection sites** |
 
 ## Configuration
 
@@ -221,7 +221,7 @@ if (newVersion) console.log(`Updated to ${newVersion}`);
 | `CLOAKBROWSER_SKIP_CHECKSUM` | `false` | Set to `true` to skip SHA-256 verification after download |
 | `CLOAKBROWSER_WIDEVINE_CDM` | — | Path to a sideloaded `WidevineCdm` directory (overrides auto-detection next to the binary) |
 | `CLOAKBROWSER_WIDEVINE` | `1` | Set to `0` to disable automatic Widevine hint-file seeding for persistent contexts |
-| `CLOAKBROWSER_VERSION` | — | Pin to an exact Chromium version for rollback (e.g. `146.0.7680.177.5`). Works with Free and Pro binaries |
+| `CLOAKBROWSER_VERSION` | — | Pin to an exact Chromium version for rollback (e.g. `154.0.8037.57.1`). Paid Pro key only |
 | `CLOAKBROWSER_RELEASE_CHANNEL` | `stable` | Set to `preview` to opt into the Pro Preview binary channel |
 
 ### Widevine / DRM
@@ -347,14 +347,14 @@ Or set `CLOAKBROWSER_RELEASE_CHANNEL=preview` for all launches and CLI commands.
 
 **New update broke something? Roll back to the previous version**
 
-Pin to an exact binary version (keep current wrapper, use older Chromium):
+Pin to an exact binary version (keep current wrapper, use older Chromium). Paid Pro key only. A free GitHub key cannot pin: it ignores the pin and always gets the latest build.
 
 ```bash
-export CLOAKBROWSER_VERSION=146.0.7680.177.5   # env var for all launches
+export CLOAKBROWSER_VERSION=154.0.8037.57.1   # env var for all launches
 ```
 
 ```javascript
-const browser = await launch({ browserVersion: '146.0.7680.177.5' });
+const browser = await launch({ licenseKey: 'cb_xxxxxxxx', browserVersion: '154.0.8037.57.1' });
 ```
 
 The pin is never sticky — unpinned launches always use the latest available version.

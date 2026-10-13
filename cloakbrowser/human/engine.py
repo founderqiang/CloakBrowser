@@ -923,7 +923,12 @@ class Human:
                                         cfg, deadline)
         else:
             await self._select_listbox(target, r, p, opts, api, cfg, deadline)
-        state = await self.worlds.call(r.frame, "selectState", r.id)
+        try:
+            state = await self.worlds.call(r.frame, "selectState", r.id)
+        except StaleElement:
+            # The pick navigated the page (a form submitted on change): nothing
+            # left to read back, so report what was chosen, as Playwright does.
+            return p["values"]
         if sorted(state["selected"]) != sorted(p["targets"]):
             raise Error(f"{api}: Error: selection ended as {state['values']} instead of {p['values']}")
         return state["values"]

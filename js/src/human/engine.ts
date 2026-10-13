@@ -872,7 +872,15 @@ export class Human {
     });
     if (!p.listbox) await this.selectDropdown(target, r, p.targets.length ? p.targets[0] : null, p, opts, api, deadline);
     else await this.selectListbox(target, r, p, opts, api, cfg, deadline);
-    const state = await this.worlds.call(r.frame, 'selectState', r.id);
+    let state;
+    try {
+      state = await this.worlds.call(r.frame, 'selectState', r.id);
+    } catch (e) {
+      // The pick navigated the page (a form submitted on change): nothing
+      // left to read back, so report what was chosen, as Playwright does.
+      if (e instanceof StaleElement) return p.values;
+      throw e;
+    }
     const sorted = (a: number[]) => JSON.stringify([...a].sort((x, y) => x - y));
     if (sorted(state.selected) !== sorted(p.targets)) {
       throw err(`${api}: Error: selection ended as ${JSON.stringify(state.values)} instead of ${JSON.stringify(p.values)}`);

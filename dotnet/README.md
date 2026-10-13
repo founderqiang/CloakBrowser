@@ -362,7 +362,7 @@ var page = await ctx.NewPageAsync();
 | `NoViewport` | `bool` | `false` | disable viewport emulation (track the real window) |
 | `ColorScheme` | `string` | - | `light` / `dark` |
 | `LicenseKey` | `string` | `null` | CloakBrowser Pro key (or `CLOAKBROWSER_LICENSE_KEY` env / `~/.cloakbrowser/license.key`) |
-| `BrowserVersion` | `string` | `null` | Pin an exact Chromium version (e.g. `"154.0.8037.57.1"`). Also reads from `CLOAKBROWSER_VERSION` env var. Works with Free and Pro. |
+| `BrowserVersion` | `string` | `null` | Pin an exact Chromium version (e.g. `"154.0.8037.57.1"`). Also reads from `CLOAKBROWSER_VERSION` env var. Paid Pro key only. |
 | `ReleaseChannel` | `string` | `null` (`stable`) | Set to `"preview"` to opt into the Pro Preview binary channel. Also reads from `CLOAKBROWSER_RELEASE_CHANNEL`. |
 
 ### CloakBrowser Pro
@@ -408,16 +408,9 @@ Or set `CLOAKBROWSER_RELEASE_CHANNEL=preview` for all launches and CLI commands.
 
 ### Rolling back to a previous binary version
 
-Pin an exact Chromium version without downgrading the wrapper — works for Free and Pro:
+Pin an exact Chromium version without downgrading the wrapper — paid Pro key only. A free GitHub key cannot pin: it ignores the pin and always gets the latest build.
 
 ```csharp
-// Free — pin a public release
-await using var browser = await CloakLauncher.LaunchAsync(new LaunchOptions
-{
-    BrowserVersion = "146.0.7680.177.5",
-});
-
-// Pro — pin a specific Pro version
 await using var browser = await CloakLauncher.LaunchAsync(new LaunchOptions
 {
     LicenseKey = "cb_xxxxxxxx",
@@ -628,7 +621,7 @@ Same set as the Python wrapper:
 | `CLOAKBROWSER_DOWNLOAD_URL` | Override the download URL |
 | `CLOAKBROWSER_AUTO_UPDATE` | Enable/disable background auto-update |
 | `CLOAKBROWSER_SKIP_CHECKSUM` | Skip SHA-256 verification |
-| `CLOAKBROWSER_VERSION` | Pin to an exact Chromium version for rollback (e.g. `154.0.8037.57.1`). Works with Free and Pro binaries |
+| `CLOAKBROWSER_VERSION` | Pin to an exact Chromium version for rollback (e.g. `154.0.8037.57.1`). Paid Pro key only |
 | `CLOAKBROWSER_RELEASE_CHANNEL` | Set to `preview` to opt into the Pro Preview binary channel (default: `stable`) |
 | `CLOAKBROWSER_GEOIP_TIMEOUT_SECONDS` | GeoIP HTTP timeout |
 | `CLOAKBROWSER_WIDEVINE_CDM` / `CLOAKBROWSER_WIDEVINE` | Widevine seeding control |

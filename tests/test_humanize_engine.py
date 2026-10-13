@@ -724,6 +724,16 @@ def test_select_option_on_emoji_labels(page):
         assert page.select_option("#emoji", "c") == ["c"]
 
 
+def test_select_option_that_navigates_the_page(page):
+    """#597: a dropdown that submits its form on change; the pick still returns."""
+    page.evaluate("""() => { const f = document.createElement('form'); f.method = 'get';
+        const s = document.createElement('select'); s.id = 'nav'; s.name = 'city';
+        for (const [l, v] of [['Amsterdam', 'a'], ['Berlin', 'b']]) s.add(new Option(l, v));
+        s.onchange = () => f.submit(); f.append(s); document.body.prepend(f); }""")
+    assert page.select_option("#nav", "b") == ["b"]
+    page.wait_for_url("**city=b")
+
+
 # --- frames and handles ------------------------------------------------------
 
 def test_frame_actions(page):

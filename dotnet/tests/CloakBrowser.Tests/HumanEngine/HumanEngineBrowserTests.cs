@@ -385,6 +385,19 @@ public class HumanEngineBrowserTests : IClassFixture<EngineFixture>, IAsyncLifet
             Assert.Equal(new[] { "c" }, await p.SelectOptionAsync("#emoji", "c"));
     }
 
+    [BrowserFact]
+    public async Task SelectOption_that_navigates_the_page_still_returns()
+    {
+        // #597: a dropdown that submits its form on change.
+        var p = await Open();
+        await p.EvaluateAsync(@"() => { const f = document.createElement('form'); f.method = 'get';
+            const s = document.createElement('select'); s.id = 'nav'; s.name = 'city';
+            for (const [l, v] of [['Amsterdam', 'a'], ['Berlin', 'b']]) s.add(new Option(l, v));
+            s.onchange = () => f.submit(); f.append(s); document.body.prepend(f); }");
+        Assert.Equal(new[] { "b" }, await p.SelectOptionAsync("#nav", "b"));
+        await p.WaitForURLAsync(new System.Text.RegularExpressions.Regex("city=b"));
+    }
+
     // --- frames / handles --------------------------------------------------
 
     [BrowserFact]
