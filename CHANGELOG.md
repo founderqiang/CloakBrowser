@@ -8,6 +8,10 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ## [Unreleased]
 
+## [0.6.2] — 2026-10-12
+
+- **[wrapper]** Humanized actions (`click`, `hover`, `fill`, `type`, `check` and the rest) work again on Playwright 1.64. They timed out with `element is not visible` even on visible elements, because Playwright 1.64 changed how it checks visibility. Older Playwright versions are unaffected. Python, JavaScript, and .NET (thanks [@laplace-anon](https://github.com/laplace-anon), #586, #587)
+
 ## [0.6.1] — 2026-10-11
 
 - **[wrapper]** Element reads are now humanized: `page.input_value()`, `page.text_content()`, `page.inner_text()`, `page.inner_html()`, `page.get_attribute()` and `dispatch_event()` (page, frame, locator and element handle; sync and async) resolve and read through the humanize isolated world, like every other humanized call. A dispatched event is built by Playwright's own helper, so a page listener sees the same event it would from any other dispatch. `page._original.input_value(...)` / `page._original.dispatch_event(...)` still give the raw Playwright path. Python, JavaScript and .NET (`InputValueAsync`, `TextContentAsync`, `InnerTextAsync`, `InnerHTMLAsync`, `GetAttributeAsync`, `DispatchEventAsync` on every wrapper; `Original` / `Humanize.Unwrap(page)` for the raw path).
