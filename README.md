@@ -150,7 +150,7 @@ page.goto("https://example.com")
 
 ---
 
-## Latest: v0.6.2 — 87 source-level stealth patches (Chromium 154.0.8037.57.2)
+## Latest: v0.6.3 — 87 source-level stealth patches (Chromium 154.0.8037.57.2)
 
 - **CloakBrowser Pro Stable** — Chromium `154.0.8037.57.2` on Linux x64 and Linux ARM64; `154.0.8037.57.1` on Windows x64 and macOS (Apple Silicon and Intel). Set a `license_key` (`licenseKey` in JS) or the `CLOAKBROWSER_LICENSE_KEY` env var and the wrapper fetches the latest Stable build for your platform automatically. See [CloakBrowser Pro](#cloakbrowser-pro)
 - **.NET 8 / C# client** — CloakBrowser now ships as a NuGet package (`CloakBrowser`), mirroring the Python and JS wrappers.
@@ -648,7 +648,7 @@ const browser = await launch({ humanize: true, humanPreset: 'careful' });
 ```python
 browser = launch(humanize=True, human_config={
     "mistype_chance": 0.05,              # 5% typo rate with self-correction
-    "typing_delay": 100,                 # slower typing (ms per character)
+    "typing_delay": 200,                 # slower typing (ms between keys)
     "idle_between_actions": True,        # micro-movements between clicks
     "idle_between_duration": [0.3, 0.8], # idle duration range (seconds)
 })
@@ -659,7 +659,7 @@ const browser = await launch({
     humanize: true,
     humanConfig: {
         mistype_chance: 0.05,
-        typing_delay: 100,
+        typing_delay: 200,
         idle_between_actions: true,
         idle_between_duration: [0.3, 0.8],
     }
@@ -724,7 +724,7 @@ Every `launch()` call sets these automatically. The **wrapper** applies platform
 
 | Flag | Linux/Windows Default | macOS Default | Controls |
 |------|--------------|---------------|----------|
-| `--fingerprint` | Random (10000–99999) | Random (10000–99999) | Master seed for canvas, WebGL, audio, fonts, client rects |
+| `--fingerprint` | Random (10000–99999) | Random (10000–99999) | Master seed for canvas, WebGL, audio, fonts |
 | `--fingerprint-platform` | `windows` | `macos` | `navigator.platform`, User-Agent OS, GPU pool selection |
 
 The binary auto-generates everything else from the seed: GPU, hardware concurrency, device memory, and screen dimensions. Each seed produces a unique, consistent fingerprint. Override with explicit flags if needed.
@@ -752,7 +752,7 @@ Supported by the binary but **not set by default** — pass via `args` to custom
 | `--fingerprint-taskbar-height` | Override taskbar height (binary defaults: Win=48, Mac=95, Linux=0) |
 | `--fingerprint-windows-font-metrics` | **Chromium 148+ binary only** (no-op on earlier builds). Align font metrics with the Windows platform when spoofing Windows on Linux — used in the [FingerprintJS config](#detected-by-fingerprintjs). Requires Windows fonts installed (see [Font Setup on Linux](#font-setup-on-linux)); no effect without them. On `154.0.8037.57.2` and newer this is on by default when the Windows fonts are installed, so the flag is no longer needed |
 | `--fingerprint-webrtc-ip` | WebRTC ICE candidate IP replacement. Use `auto` to resolve from proxy exit IP (makes an HTTP call through the proxy), or pass an explicit IP. Auto-injected when `geoip=True` |
-| `--fingerprint-noise=false` | Disable noise injection (canvas, WebGL, audio, client rects) while keeping the deterministic fingerprint seed active |
+| `--fingerprint-noise=false` | Disable noise injection (canvas, WebGL, audio) while keeping the deterministic fingerprint seed active |
 | `--fingerprint=off` | **Chromium 148+ binary only.** Pass-through debug mode — turns spoofing off and presents the machine's **real native fingerprint** (keeps only the baseline any Chrome needs). The binary strips the injected seed *and* `--fingerprint-platform`, so there's no mixed OS profile. Most useful on a genuine Windows machine to check whether an issue is our spoofing or the environment. Accepts `off`/`false`/`0`/`disable`/`disabled`. For a *pure* pass-through don't combine it with `geoip=True` / explicit timezone / locale — those stay applied. |
 | `--fingerprint-allow-3p-cookies` | **Chromium 148+ binary only.** Re-enable third-party cookies for embedded flows that need them (reCAPTCHA v3, SSO, some payment challenges). Off by default; turn on only where a login/payment/embedded challenge loads but never finishes. |
 | `--fingerprint-sapi-voices=false` | **Chromium 150+ binary only.** Opt out of the Windows speech-voice tables when spoofing Windows. On by default (the voice set matches a real Chrome install); turn off only if a target reacts badly to the Windows voice list. |
@@ -1038,7 +1038,7 @@ services:
 **Per-connection fingerprint seeds** — run multiple browser identities from a single container. Each unique seed spawns a separate Chrome process with its own fingerprint:
 
 ```python
-# Each seed gets unique canvas noise, client rects, and other browser signals
+# Each seed gets unique canvas noise and other browser signals
 b1 = pw.chromium.connect_over_cdp("http://localhost:9222?fingerprint=11111")
 b2 = pw.chromium.connect_over_cdp("http://localhost:9222?fingerprint=22222")
 
@@ -1485,6 +1485,7 @@ Issues and PRs welcome. If something isn't working, [open an issue](https://gith
 - [@bercedev](https://github.com/bercedev) — humanize support for compiled (Nuitka) Playwright builds
 - [@laplace-anon](https://github.com/laplace-anon) — humanize fix for Playwright 1.64
 - [@theaafofficial](https://github.com/theaafofficial) — non-blocking async launches (GeoIP, WebRTC and license lookups off the event loop)
+- [@jipeng6036-del](https://github.com/jipeng6036-del) — Seychelles GeoIP locale
 
 ## Star History
 
