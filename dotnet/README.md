@@ -369,7 +369,7 @@ var page = await ctx.NewPageAsync();
 
 The wrappers are MIT, free forever. The latest binary is **free to try**:
 
-- **Free, latest build (Chromium 154)** — the newest binary. Free with a GitHub sign-in, one concurrent session. Run `cloakbrowser login` or [grab your key](https://cloakbrowser.dev/free).
+- **Free, latest build (Chromium 155)** — the newest binary. Free with a GitHub sign-in, one concurrent session. Run `cloakbrowser login` or [grab your key](https://cloakbrowser.dev/free).
 - **Pro** — scale to **5, 20, 200, 2,000, or more concurrent sessions**, always first on the newest patches, with hands-on support. Linux, Windows, macOS. **[See plans and pricing →](https://cloakbrowser.dev)**
 - **v146** — the older build stays free on [GitHub Releases](https://github.com/CloakHQ/cloakbrowser/releases). A quick first look, but it ages fast as detection evolves.
 

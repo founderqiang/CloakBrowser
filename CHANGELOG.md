@@ -6,6 +6,10 @@ Changes are tagged: **[wrapper]** for Python/JS wrapper, **[binary]** for Chromi
 
 ---
 
+## [Unreleased]
+
+- **[wrapper]** The first-launch Pro banner now names the current Pro major (v155) instead of v154. Python, JavaScript, and .NET.
+
 ## [0.6.3] — 2026-10-14
 
 - **[wrapper]** `geoip=True` no longer fails the launch when the exit IP's country has no locale in the map. It logs a warning and uses `en-US`. Python, JavaScript, and .NET (#591)
