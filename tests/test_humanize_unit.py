@@ -1133,3 +1133,29 @@ def test_dispatch_event_raises_on_world_error():
     human, target = _human_with({"error": "boom"})
     with pytest.raises(Error, match="page.dispatch_event: Error: boom"):
         asyncio.run(human.dispatch(target, {}, "page.dispatch_event", "click"))
+
+
+def test_match_child_survives_frame_renamed_by_page_js():
+    # Page JS set window.name: CDP has the new name, Playwright the old one, and
+    # the cross-site sibling (own process) is absent from the parent's CDP tree.
+    from types import SimpleNamespace as F
+    from cloakbrowser.human.world import _match_child
+
+    oopif = F(name="", url="http://other.test/b.html")
+    mid = F(name="m", url="http://site.test/mid.html")
+    parent = F(child_frames=[oopif, mid])
+    kids = [{"id": "MID", "name": "renamed-by-js", "url": "http://site.test/mid.html"}]
+    assert _match_child(mid, parent, kids) == "MID"
+
+
+def test_match_child_same_url_siblings_keep_attach_order_after_rename():
+    from types import SimpleNamespace as F
+    from cloakbrowser.human.world import _match_child
+
+    a = F(name="a", url="http://site.test/w.html")
+    b = F(name="b", url="http://site.test/w.html")
+    parent = F(child_frames=[F(name="", url="http://other.test/x.html"), a, b])
+    kids = [{"id": "A", "name": "a", "url": "http://site.test/w.html"},
+            {"id": "B", "name": "renamed", "url": "http://site.test/w.html"}]
+    assert _match_child(a, parent, kids) == "A"
+    assert _match_child(b, parent, kids) == "B"

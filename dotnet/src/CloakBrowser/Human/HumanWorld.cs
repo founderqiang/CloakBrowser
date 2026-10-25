@@ -155,12 +155,12 @@ internal sealed class HumanWorld
     }
 
     /// <summary>Playwright and CDP list child frames in attach order; frames sharing the
-    /// same (name, url) are matched by their position within that group.</summary>
+    /// same url are matched by their position within that group. The name is not part of
+    /// the key: page JS can set <c>window.name</c>, which CDP reports but Playwright never refreshes.</summary>
     internal static string? MatchChild(IFrame frame, IFrame parent, IReadOnlyList<JsonElement> kids)
     {
-        static string KeyPw(IFrame f) => f.Name + "\u0000" + f.Url;
+        static string KeyPw(IFrame f) => f.Url;
         static string KeyCdp(JsonElement k) =>
-            (k.TryGetProperty("name", out var n) ? n.GetString() : "") + "\u0000" +
             (k.TryGetProperty("url", out var u) ? u.GetString() : "") +
             (k.TryGetProperty("urlFragment", out var uf) ? uf.GetString() : "");
         var want = KeyPw(frame);

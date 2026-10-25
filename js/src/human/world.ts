@@ -63,12 +63,13 @@ function findNode(tree: any, cdpId: string): any {
 
 /**
  * Pick the CDP child frame for a Playwright frame. Playwright and CDP list
- * child frames in attach order; frames sharing the same (name, url) are
- * matched by their position within that group.
+ * child frames in attach order; frames sharing the same url are matched by
+ * their position within that group. The name is not part of the key: page JS
+ * can set window.name, which CDP reports but Playwright never refreshes.
  */
 export function matchChild(frame: Frame, parent: Frame, kids: any[]): string | null {
-  const keyPw = (f: Frame) => `${f.name()}\u0000${f.url()}`;
-  const keyCdp = (k: any) => `${k.name ?? ''}\u0000${(k.url ?? '') + (k.urlFragment ?? '')}`;
+  const keyPw = (f: Frame) => f.url();
+  const keyCdp = (k: any) => (k.url ?? '') + (k.urlFragment ?? '');
   const want = keyPw(frame);
   const cands = kids.filter((k) => keyCdp(k) === want);
   const siblings = parent.childFrames();

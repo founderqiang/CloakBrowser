@@ -631,13 +631,15 @@ def _match_child(frame: Any, parent: Any, kids: List[Dict[str, Any]]) -> Optiona
     """Pick the CDP child frame for a Playwright frame.
 
     Playwright and CDP list child frames in attach order; frames sharing the
-    same (name, url) are matched by their position within that group.
+    same url are matched by their position within that group. The name is not
+    part of the key: page JS can set ``window.name``, which CDP reports but
+    Playwright never refreshes.
     """
-    def key_pw(f: Any) -> Tuple[str, str]:
-        return f.name, f.url
+    def key_pw(f: Any) -> str:
+        return f.url
 
-    def key_cdp(k: Dict[str, Any]) -> Tuple[str, str]:
-        return k.get("name", ""), k.get("url", "") + k.get("urlFragment", "")
+    def key_cdp(k: Dict[str, Any]) -> str:
+        return k.get("url", "") + k.get("urlFragment", "")
 
     want = key_pw(frame)
     cands = [k for k in kids if key_cdp(k) == want]
