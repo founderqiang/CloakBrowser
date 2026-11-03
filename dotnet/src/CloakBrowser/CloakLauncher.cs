@@ -23,47 +23,16 @@ public static class CloakLauncher
     {
         options ??= new LaunchOptions();
 
-        string binaryPath = await Download.EnsureBinaryAsync(
-            options.LicenseKey, options.BrowserVersion,
-            releaseChannel: options.ReleaseChannel).ConfigureAwait(false);
-        var (timezone, locale, exitIp) = await MaybeResolveGeoIpAsync(
-            options.GeoIp, options.Proxy, options.Timezone, options.Locale, options.Args).ConfigureAwait(false);
-        var proxyResolution = ProxyResolver.Resolve(
-            options.Proxy, options.BrowserVersion, options.LicenseKey, options.ReleaseChannel);
-        var args = await ResolveWebRtcArgsAsync(options.Args, options.Proxy).ConfigureAwait(false);
-        args = MaybeAppendWebRtcExitIp(args, exitIp);
-
-        var combined = new List<string>(args ?? new List<string>());
-        combined.AddRange(proxyResolution.ExtraArgs);
-        var chromeArgs = BuildArgs(options.StealthArgs, combined, timezone, locale, options.Headless, options.ExtensionPaths,
-            startMaximized: Config.BinarySupportsMaximizedWindow(
-                options.LicenseKey, options.BrowserVersion, options.ReleaseChannel)
-                && !options.SuppressMaximize);
-        MaybeWarnWindowsFonts(chromeArgs);
-
-        CloakLog.Debug($"Launching stealth Chromium (headless={options.Headless}, args={chromeArgs.Count})");
-
-        // Per-launch denial file: the binary records a post-handshake license
-        // denial here so NewPage/NewContext can surface it (see LicenseGuard).
-        // Only when a key is in play — keyless runs the unenforced free binary.
-        var denialPath = License.ResolveLicenseKey(options.LicenseKey) != null
-            ? License.MintDenialFile()
-            : null;
+        var launchOptions = await BuildLaunchOptionsAsync(options).ConfigureAwait(false);
+        var denialPath = DenialPathFrom(launchOptions);
+        CloakLog.Debug($"Launching stealth Chromium (headless={options.Headless}, args={launchOptions.Args!.Count()})");
 
         var playwright = await Playwright.CreateAsync().ConfigureAwait(false);
         // Only the launch is wrapped for license-error mapping (mirrors Python/JS).
         IBrowser browser;
         try
         {
-            browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-            {
-                ExecutablePath = binaryPath,
-                Headless = options.Headless,
-                Args = chromeArgs,
-                IgnoreDefaultArgs = Config.IgnoreDefaultArgs,
-                Proxy = proxyResolution.PlaywrightProxy,
-                Env = License.BuildLaunchEnv(options.LicenseKey, statusFile: denialPath),
-            }).ConfigureAwait(false);
+            browser = await playwright.Chromium.LaunchAsync(launchOptions).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -80,13 +49,10 @@ public static class CloakLauncher
             var humanCfg = options.Humanize
                 ? HumanConfigFactory.Resolve(options.HumanPreset, options.HumanConfig)
                 : null;
-            // Pass headless so headed handles default new pages/contexts to NoViewport
-            // (track the real window - see CloakBrowserHandle.ApplyDefaultNoViewport).
-            // headlessNoViewport extends that default to headless on newer binaries.
-            bool headlessNoViewport = Config.BinarySupportsHeadlessNoViewport(
-                options.LicenseKey, options.BrowserVersion, options.ReleaseChannel);
+            // New pages/contexts default to NoViewport: headed tracks the real window,
+            // headless reports coherent dimensions natively (see ViewportDefaults).
             return new CloakBrowserHandle(
-                playwright, browser, options.Humanize, humanCfg, options.Headless, headlessNoViewport, denialPath);
+                playwright, browser, options.Humanize, humanCfg, denialPath);
         }
         catch
         {
@@ -96,6 +62,83 @@ public static class CloakLauncher
             throw;
         }
     }
+
+    /// <summary>
+    /// Build the Playwright launch options <see cref="LaunchAsync"/> uses, without starting
+    /// Chromium. Use it with your own Playwright instance:
+    /// <c>var opts = await CloakLauncher.BuildLaunchOptionsAsync(o);
+    /// var browser = CloakLauncher.GuardBrowser(await pw.Chromium.LaunchAsync(opts), opts);</c>.
+    /// Wrap the launch call with <see cref="LicenseErrorFrom"/> so a license denial during
+    /// launch also surfaces as <see cref="CloakBrowserLicenseError"/>.
+    /// Humanize options on <paramref name="options"/> are ignored here; wrap with
+    /// <see cref="Wrappers.Humanize.Browser"/> before <see cref="GuardBrowser"/>.
+    /// </summary>
+    public static async Task<BrowserTypeLaunchOptions> BuildLaunchOptionsAsync(LaunchOptions? options = null)
+    {
+        options ??= new LaunchOptions();
+
+        string binaryPath = await Download.EnsureBinaryAsync(
+            options.LicenseKey, options.BrowserVersion,
+            releaseChannel: options.ReleaseChannel).ConfigureAwait(false);
+        var (timezone, locale, exitIp) = await MaybeResolveGeoIpAsync(
+            options.GeoIp, options.Proxy, options.Timezone, options.Locale, options.Args).ConfigureAwait(false);
+        var proxyResolution = ProxyResolver.Resolve(options.Proxy);
+        var args = await ResolveWebRtcArgsAsync(options.Args, options.Proxy).ConfigureAwait(false);
+        args = MaybeAppendWebRtcExitIp(args, exitIp);
+
+        var combined = new List<string>(args ?? new List<string>());
+        combined.AddRange(proxyResolution.ExtraArgs);
+        var chromeArgs = BuildArgs(options.StealthArgs, combined, timezone, locale, options.Headless, options.ExtensionPaths,
+            startMaximized: !options.SuppressMaximize);
+        MaybeWarnWindowsFonts(chromeArgs);
+
+        // Per-launch denial file: the binary records a post-handshake license
+        // denial here so GuardBrowser / the handle can surface it (see LicenseGuard).
+        // Only when a key is in play (none only with a CLOAKBROWSER_BINARY_PATH override).
+        var denialPath = License.ResolveLicenseKey(options.LicenseKey) != null
+            ? License.MintDenialFile()
+            : null;
+
+        return new BrowserTypeLaunchOptions
+        {
+            ExecutablePath = binaryPath,
+            Headless = options.Headless,
+            Args = chromeArgs,
+            IgnoreDefaultArgs = Config.IgnoreDefaultArgs,
+            Proxy = proxyResolution.PlaywrightProxy,
+            Env = License.BuildLaunchEnv(options.LicenseKey, statusFile: denialPath),
+        };
+    }
+
+    /// <summary>
+    /// Make a license denial (e.g. over the session cap) on a browser you launched yourself
+    /// throw <see cref="CloakBrowserLicenseError"/> instead of a bare "Target closed" error.
+    /// Pass the options <see cref="BuildLaunchOptionsAsync"/> returned and use the returned
+    /// browser. Returns <paramref name="browser"/> unchanged when no license key was in play.
+    /// </summary>
+    public static IBrowser GuardBrowser(IBrowser browser, BrowserTypeLaunchOptions launchOptions) =>
+        (IBrowser)LicenseGuard.Wrap(browser, DenialPathFrom(launchOptions));
+
+    /// <summary>
+    /// Map a failed <c>Chromium.LaunchAsync(opts)</c> to <see cref="CloakBrowserLicenseError"/> when
+    /// the binary refused the license during launch (before <see cref="GuardBrowser"/> can run),
+    /// or null for any other error:
+    /// <c>catch (Exception ex) { throw CloakLauncher.LicenseErrorFrom(ex, opts) ?? ex; }</c>.
+    /// .NET Playwright omits the exit code from its error, so this reads the launch's denial file.
+    /// </summary>
+    public static CloakBrowserLicenseError? LicenseErrorFrom(Exception ex, BrowserTypeLaunchOptions launchOptions) =>
+        License.LicenseErrorFrom(ex, DenialPathFrom(launchOptions));
+
+    /// <summary>
+    /// Why the license refused the browser launched with <paramref name="launchOptions"/>
+    /// (from <see cref="BuildLaunchOptionsAsync"/>), or null. Checks now, without a browser
+    /// call. Handles from <see cref="LaunchAsync"/> etc. have <c>LicenseDenial()</c> instead.
+    /// </summary>
+    public static CloakBrowserLicenseError? LicenseDenial(BrowserTypeLaunchOptions launchOptions) =>
+        DenialPathFrom(launchOptions) is { } path ? LicenseGuard.DenialError(path) : null;
+
+    private static string? DenialPathFrom(BrowserTypeLaunchOptions launchOptions) =>
+        launchOptions.Env?.FirstOrDefault(kv => kv.Key == License.LicenseStatusFileEnv).Value;
 
     // -----------------------------------------------------------------------
     // launch_context - returns a Context handle (browser owned)
@@ -166,33 +209,28 @@ public static class CloakLauncher
     {
         options ??= new LaunchContextOptions();
 
-        string binaryPath = await Download.EnsureBinaryAsync(
-            options.LicenseKey, options.BrowserVersion,
-            releaseChannel: options.ReleaseChannel).ConfigureAwait(false);
-        var (timezone, locale, exitIp) = await MaybeResolveGeoIpAsync(
-            options.GeoIp, options.Proxy, options.Timezone, options.Locale, options.Args).ConfigureAwait(false);
-        var proxyResolution = ProxyResolver.Resolve(
-            options.Proxy, options.BrowserVersion, options.LicenseKey, options.ReleaseChannel);
-        var args = await ResolveWebRtcArgsAsync(options.Args, options.Proxy).ConfigureAwait(false);
-        args = MaybeAppendWebRtcExitIp(args, exitIp);
-        args = Config.PersistentSeedArgs(userDataDir, options.StealthArgs, args);
-
-        var combined = new List<string>(args ?? new List<string>());
-        combined.AddRange(proxyResolution.ExtraArgs);
-        var chromeArgs = BuildArgs(options.StealthArgs, combined, timezone, locale, options.Headless, options.ExtensionPaths,
-            startMaximized: Config.BinarySupportsMaximizedWindow(
-                options.LicenseKey, options.BrowserVersion, options.ReleaseChannel)
-                && !options.NoViewport && options.Viewport == null);
-        MaybeWarnWindowsFonts(chromeArgs);
+        var launchOptions = await BuildLaunchOptionsAsync(new LaunchOptions
+        {
+            Headless = options.Headless,
+            Proxy = options.Proxy,
+            Args = Config.PersistentSeedArgs(userDataDir, options.StealthArgs, options.Args),
+            StealthArgs = options.StealthArgs,
+            Timezone = options.Timezone,
+            Locale = options.Locale,
+            GeoIp = options.GeoIp,
+            ExtensionPaths = options.ExtensionPaths,
+            LicenseKey = options.LicenseKey,
+            BrowserVersion = options.BrowserVersion,
+            ReleaseChannel = options.ReleaseChannel,
+            // Caller chose a viewport geometry → don't also auto-maximize the window.
+            SuppressMaximize = options.NoViewport || options.Viewport != null,
+        }).ConfigureAwait(false);
+        var denialPath = DenialPathFrom(launchOptions);
 
         CloakLog.Debug($"Launching persistent stealth Chromium (headless={options.Headless}, user_data_dir={userDataDir})");
 
         // Seed the Widevine CDM hint (Linux-only; no-op elsewhere).
-        Widevine.SeedWidevineHint(userDataDir, binaryPath);
-
-        var denialPath = License.ResolveLicenseKey(options.LicenseKey) != null
-            ? License.MintDenialFile()
-            : null;
+        Widevine.SeedWidevineHint(userDataDir, launchOptions.ExecutablePath!);
 
         var playwright = await Playwright.CreateAsync().ConfigureAwait(false);
         // Only the launch is wrapped for license-error mapping (mirrors Python/JS).
@@ -201,12 +239,12 @@ public static class CloakLauncher
         {
             var ctxLaunchOptions = new BrowserTypeLaunchPersistentContextOptions
             {
-                ExecutablePath = binaryPath,
-                Headless = options.Headless,
-                Args = chromeArgs,
-                IgnoreDefaultArgs = Config.IgnoreDefaultArgs,
-                Proxy = proxyResolution.PlaywrightProxy,
-                Env = License.BuildLaunchEnv(options.LicenseKey, statusFile: denialPath),
+                ExecutablePath = launchOptions.ExecutablePath,
+                Headless = launchOptions.Headless,
+                Args = launchOptions.Args,
+                IgnoreDefaultArgs = launchOptions.IgnoreDefaultArgs,
+                Proxy = launchOptions.Proxy,
+                Env = launchOptions.Env,
             };
             ApplyContextEmulation(ctxLaunchOptions, options);
 
@@ -420,8 +458,6 @@ public static class CloakLauncher
 
         // Open maximized (real Chrome overwhelmingly runs maximized) so the window
         // fills the spoofed screen. Skipped if the caller chose a window geometry.
-        // Gated to binaries where this stays coherent (see BinarySupportsMaximizedWindow)
-        // — below the gate it would make outerWidth < innerWidth.
         if (startMaximized
             && !seen.ContainsKey("--start-maximized")
             && !seen.ContainsKey("--window-size")
@@ -589,8 +625,8 @@ public static class CloakLauncher
     /// <summary>
     /// Resolve the viewport for a context. Headed: no emulated viewport so the page
     /// tracks the real window (CDP viewport emulation forces outerWidth &lt; innerWidth =
-    /// a physically impossible window = bot tell). Headless: a fixed DEFAULT_VIEWPORT
-    /// stays coherent (outer == inner) and keeps dimensions deterministic. An explicit
+    /// a physically impossible window = bot tell). Headless: the binary reports coherent
+    /// dimensions natively, so no emulated viewport either. An explicit
     /// <see cref="LaunchContextOptions.NoViewport"/> or <see cref="LaunchContextOptions.Viewport"/>
     /// is always honored. Port of Python <c>_resolve_context_viewport</c>.
     /// </summary>
@@ -600,14 +636,9 @@ public static class CloakLauncher
             return ViewportSize.NoViewport;
         if (options.Viewport != null)
             return new ViewportSize { Width = options.Viewport.Value.Width, Height = options.Viewport.Value.Height };
-        // Viewport unset: headed tracks the real window; headless on a newer binary also
-        // tracks it (coherent dimensions natively), older headless gets the fixed default.
-        bool headlessNoViewport = options.Headless
-            && Config.BinarySupportsHeadlessNoViewport(
-                options.LicenseKey, options.BrowserVersion, options.ReleaseChannel);
-        return options.Headless && !headlessNoViewport
-            ? new ViewportSize { Width = Config.DefaultViewportWidth, Height = Config.DefaultViewportHeight }
-            : ViewportSize.NoViewport;
+        // Viewport unset: headed tracks the real window; headless reports coherent
+        // dimensions natively.
+        return ViewportSize.NoViewport;
     }
 
     private static BrowserNewContextOptions BuildContextOptions(LaunchContextOptions options)
