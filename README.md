@@ -1294,15 +1294,17 @@ JavaScript's `await new Promise(r => setTimeout(r, ms))` is not affected.
 
 ### reCAPTCHA v3 scores are low (0.1–0.3)
 
-Avoid `page.wait_for_timeout()` — it sends CDP protocol commands that reCAPTCHA detects. Use native sleep instead:
+Avoid `page.wait_for_timeout()` — it sends CDP protocol commands that reCAPTCHA detects. Wait in short steps instead, as shown in [How to wait on a page](#how-to-wait-on-a-page-sync-python):
 
 ```python
 # Bad — sends CDP commands, reCAPTCHA detects this
 page.wait_for_timeout(3000)
 
-# Good — invisible to the browser
+# Good — short steps, no long blocking sleep
 import time
-time.sleep(3)
+for _ in range(3):
+    page.context.cookies()
+    time.sleep(1)
 ```
 
 For longer waits in the sync API, wait in short steps as shown in [How to wait on a page](#how-to-wait-on-a-page-sync-python).
